@@ -69,10 +69,13 @@ export class WaterPowerWorld {
     this.trees = [];
     this.cyberRings = [];
     this.vehicles = [];
+    this.clouds = [];
+    this.windSpinners = [];
     this.stationMats = null;
 
     this.initRenderer();
     this.initScene();
+    this.buildSkyAndClouds();
     this.initStationMaterials();
     this.buildTerrainAndRiver();
     this.buildBridge();
@@ -143,6 +146,64 @@ export class WaterPowerWorld {
     this.scene.add(rim);
   }
 
+  buildSkyAndClouds() {
+    this.skyMat = new THREE.ShaderMaterial({
+      side: THREE.BackSide,
+      depthWrite: false,
+      uniforms: {
+        uTopColor: { value: new THREE.Color("#1d70b8") },
+        uHorizonColor: { value: new THREE.Color("#bae6fd") }
+      },
+      vertexShader: `
+        varying vec3 vWorldPos;
+        void main() {
+          vec4 wp = modelMatrix * vec4(position, 1.0);
+          vWorldPos = wp.xyz;
+          gl_Position = projectionMatrix * viewMatrix * wp;
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 uTopColor;
+        uniform vec3 uHorizonColor;
+        varying vec3 vWorldPos;
+        void main() {
+          float h = clamp(normalize(vWorldPos).y, 0.0, 1.0);
+          float mixVal = smoothstep(0.0, 0.65, h);
+          gl_FragColor = vec4(mix(uHorizonColor, uTopColor, mixVal), 1.0);
+        }
+      `
+    });
+    const skyDome = new THREE.Mesh(new THREE.SphereGeometry(95, 24, 16), this.skyMat);
+    this.scene.add(skyDome);
+
+    this.cloudMat = new THREE.MeshStandardMaterial({
+      color: "#ffffff",
+      roughness: 0.9,
+      metalness: 0.0,
+      flatShading: true,
+      transparent: true,
+      opacity: 0.9
+    });
+    const cloudSeeds = [
+      [-18, 17, -22, 1.2], [-4, 19, -26, 1.4], [14, 18, -20, 1.1],
+      [-24, 16, 4, 1.0], [22, 17, -6, 1.3], [6, 20, -30, 1.5]
+    ];
+    for (const [cx, cy, cz, sc] of cloudSeeds) {
+      const grp = new THREE.Group();
+      const puffs = [[0, 0, 0, 1.6], [1.4, -0.2, 0.2, 1.2], [-1.3, -0.25, -0.1, 1.15], [0.5, 0.55, -0.2, 1.1]];
+      for (const [px, py, pz, r] of puffs) {
+        const puff = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 1), this.cloudMat);
+        puff.position.set(px, py, pz);
+        puff.scale.set(1.2, 0.72, 0.95);
+        grp.add(puff);
+      }
+      grp.position.set(cx, cy, cz);
+      grp.scale.setScalar(sc);
+      this.scene.add(grp);
+      this.clouds.push({ grp, speed: 0.45 + Math.random() * 0.35 });
+    }
+  }
+
   buildTerrainAndRiver() {
     this.grassMat = flatMat("#45a85f", 0.88);
     this.darkGrassMat = flatMat("#2f855a", 0.9);
@@ -196,17 +257,32 @@ export class WaterPowerWorld {
     upperWater.receiveShadow = true;
     this.scene.add(upperWater);
 
-    // Waterfall cascade
+    // Waterfall cascade + white crest + plunge foam ring
     const fallGeo = new THREE.PlaneGeometry(4.8, 4.2, 8, 12);
     this.waterfallMesh = new THREE.Mesh(fallGeo, this.waterMat);
     this.waterfallMesh.position.set(-1.2, 1.85, -9.05);
     this.waterfallMesh.rotation.x = -0.12;
     this.scene.add(this.waterfallMesh);
 
-    // Lower animated river mesh
-    const riverGeo = new THREE.PlaneGeometry(5.4, 25, 10, 32);
+    const crestMat = new THREE.MeshBasicMaterial({ color: "#e0f2fe", transparent: true, opacity: 0.88 });
+    addBox(this.scene, 4.85, 0.22, 0.35, -1.2, 3.85, -9.15, crestMat, false);
+    addBox(this.scene, 4.9, 0.28, 0.85, -1.2, 0.14, -8.65, crestMat, false);
+
+    // Lower animated river mesh with vertex colors (bright shallow shores, deep center)
+    const riverGeo = new THREE.PlaneGeometry(5.4, 25, 12, 32);
     riverGeo.rotateX(-Math.PI / 2);
-    this.riverBaseY = riverGeo.attributes.position.array.slice();
+    const rPos = riverGeo.attributes.position;
+    const colors = new Float32Array(rPos.count * 3);
+    for (let i = 0; i < rPos.count; i += 1) {
+      const edge = Math.min(1, Math.abs(rPos.getX(i)) / 2.7);
+      // Center deep azure (0.72, 0.92, 1.0), edge bright turquoise foam tint (1.0, 1.0, 1.0)
+      colors[i * 3] = 0.72 + edge * 0.28;
+      colors[i * 3 + 1] = 0.9 + edge * 0.1;
+      colors[i * 3 + 2] = 1.0;
+    }
+    riverGeo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+    this.waterMat.vertexColors = true;
+    this.riverBaseY = rPos.array.slice();
     this.riverMesh = new THREE.Mesh(riverGeo, this.waterMat);
     this.riverMesh.position.set(-1.2, 0.05, 3.5);
     this.riverMesh.receiveShadow = true;
@@ -465,16 +541,28 @@ export class WaterPowerWorld {
 
   buildPowerLines() {
     const poleMat = flatMat("#475569", 0.6, 0.4);
-    const wireMat = new THREE.LineBasicMaterial({ color: "#38bdf8", transparent: true, opacity: 0.75 });
-    const poleXs = [2.2, 5.2];
-    const poleZs = [6.5, 0.5, -5.5];
+    const wireMat = new THREE.LineBasicMaterial({ color: "#38bdf8", transparent: true, opacity: 0.78 });
+    const coilMat = flatMat("#0284c7", 0.3, 0.5, { emissive: "#38bdf8", emissiveIntensity: 0.6 });
 
-    const points = [];
-    for (const pz of poleZs) {
-      addCyl(this.scene, 0.09, 0.12, 3.2, 6, poleXs[0], 1.6, pz, poleMat);
-      addCyl(this.scene, 0.09, 0.12, 3.2, 6, poleXs[1], 1.8, pz, poleMat);
-      const start = new THREE.Vector3(poleXs[0], 3.1, pz);
-      const end = new THREE.Vector3(poleXs[1], 3.3, pz);
+    // Transformer Substation on riverbank (connects hydro canyon to city)
+    addBox(this.scene, 1.6, 0.45, 2.2, 4.8, 0.55, 0.5, flatMat("#334155"));
+    addCyl(this.scene, 0.25, 0.25, 0.9, 8, 4.8, 1.15, -0.1, coilMat);
+    addCyl(this.scene, 0.25, 0.25, 0.9, 8, 4.8, 1.15, 1.1, coilMat);
+
+    const spans = [
+      [1.9, 3.1, 6.2, 4.8, 3.2, 1.1],
+      [1.9, 3.1, 0.5, 4.8, 3.2, 0.5],
+      [1.9, 3.1, -4.5, 4.8, 3.2, -0.1],
+      [4.8, 3.2, 1.1, 8.8, 3.0, 2.8],
+      [4.8, 3.2, 0.5, 9.2, 3.2, -0.2],
+      [4.8, 3.2, -0.1, 8.8, 3.4, -5.8]
+    ];
+
+    for (const [x1, y1, z1, x2, y2, z2] of spans) {
+      addCyl(this.scene, 0.08, 0.11, y1, 6, x1, y1 * 0.5, z1, poleMat);
+      addCyl(this.scene, 0.08, 0.11, y2, 6, x2, y2 * 0.5, z2, poleMat);
+      const start = new THREE.Vector3(x1, y1, z1);
+      const end = new THREE.Vector3(x2, y2, z2);
       const geo = new THREE.BufferGeometry().setFromPoints([start, end]);
       this.scene.add(new THREE.Line(geo, wireMat));
       this.pulsePaths.push({ start, end });
@@ -482,16 +570,15 @@ export class WaterPowerWorld {
 
     const pulseGeo = new THREE.SphereGeometry(0.14, 8, 8);
     const pulseMat = new THREE.MeshBasicMaterial({ color: "#67e8f9" });
-    for (let i = 0; i < this.pulsePaths.length * 2; i += 1) {
+    for (let i = 0; i < this.pulsePaths.length * 3; i += 1) {
       const mesh = new THREE.Mesh(pulseGeo, pulseMat);
       this.scene.add(mesh);
       this.energyPulses.push({
         mesh,
         pathIndex: i % this.pulsePaths.length,
-        t: (i * 0.37) % 1
+        t: (i * 0.29) % 1
       });
     }
-    void points;
   }
 
   buildCityEras() {
@@ -562,12 +649,25 @@ export class WaterPowerWorld {
       this.vehicles.push({ mesh: car, dir: ci % 2 === 0 ? 1 : -1, speed: 2.2 + ci * 0.45 });
     }
 
-    // Era 3: Modern Eco-City
+    // Era 3: Modern Eco-City + Wind Turbine
     const era3 = new THREE.Group();
     addBox(era3, 2.1, 4.2, 2.1, 0.4, 2.1, -7.0, wallCream);
     addBox(era3, 1.8, 3.6, 2.15, 0.4, 2.1, -7.0, glass, false);
     addBox(era3, 2.2, 3.5, 1.9, 3.5, 1.75, -3.2, wallCream);
     addBox(era3, 2.25, 2.7, 1.6, 3.5, 1.8, -3.2, glass, false);
+    // Eco Wind Turbine
+    addCyl(era3, 0.12, 0.18, 4.2, 8, 5.2, 2.1, 5.2, wallCream);
+    const rotor = new THREE.Group();
+    rotor.position.set(5.2, 4.15, 5.4);
+    for (let bi = 0; bi < 3; bi += 1) {
+      const blade = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.5, 0.06), wallCream);
+      const ang = (bi / 3) * Math.PI * 2;
+      blade.position.set(Math.cos(ang) * 0.65, Math.sin(ang) * 0.65, 0);
+      blade.rotation.z = ang - Math.PI / 2;
+      rotor.add(blade);
+    }
+    era3.add(rotor);
+    this.windSpinners.push(rotor);
 
     // Era 4: Futuristic Green Metropolis
     const era4 = new THREE.Group();
@@ -683,6 +783,11 @@ export class WaterPowerWorld {
     if (zoneId === "glacier") {
       this.scene.background.set("#b6e1ff");
       this.scene.fog.color.set("#cdeaff");
+      if (this.skyMat) {
+        this.skyMat.uniforms.uTopColor.value.set("#3b82f6");
+        this.skyMat.uniforms.uHorizonColor.value.set("#e0f2fe");
+      }
+      if (this.cloudMat) this.cloudMat.color.set("#f8fafc");
       this.grassMat.color.set("#e2f1ff");
       this.darkGrassMat.color.set("#bae6fd");
       this.rockMat.color.set("#64748b");
@@ -709,6 +814,11 @@ export class WaterPowerWorld {
     } else if (zoneId === "cyber") {
       this.scene.background.set("#070d1f");
       this.scene.fog.color.set("#0b132b");
+      if (this.skyMat) {
+        this.skyMat.uniforms.uTopColor.value.set("#020617");
+        this.skyMat.uniforms.uHorizonColor.value.set("#311042");
+      }
+      if (this.cloudMat) this.cloudMat.color.set("#38bdf8");
       this.grassMat.color.set("#1e293b");
       this.darkGrassMat.color.set("#0f172a");
       this.rockMat.color.set("#334155");
@@ -735,6 +845,11 @@ export class WaterPowerWorld {
     } else {
       this.scene.background.set("#73c2fb");
       this.scene.fog.color.set("#8dd1fc");
+      if (this.skyMat) {
+        this.skyMat.uniforms.uTopColor.value.set("#0284c7");
+        this.skyMat.uniforms.uHorizonColor.value.set("#bae6fd");
+      }
+      if (this.cloudMat) this.cloudMat.color.set("#ffffff");
       this.grassMat.color.set("#45a85f");
       this.darkGrassMat.color.set("#2f855a");
       this.rockMat.color.set("#64748b");
@@ -1100,6 +1215,15 @@ export class WaterPowerWorld {
         if (v.mesh.position.z > 8.2) v.mesh.position.z = -8.2;
         if (v.mesh.position.z < -8.2) v.mesh.position.z = 8.2;
       }
+    }
+    if (this.activeEra >= 3) {
+      for (const rotor of this.windSpinners) {
+        rotor.rotation.z += dt * 1.8;
+      }
+    }
+    for (const c of this.clouds) {
+      c.grp.position.x += c.speed * dt;
+      if (c.grp.position.x > 34) c.grp.position.x = -34;
     }
 
     this.renderer.render(this.scene, this.camera);

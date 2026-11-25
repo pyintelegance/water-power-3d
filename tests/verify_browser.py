@@ -46,10 +46,16 @@ def main():
             assert page.locator("#combo-pill").is_visible(), "Combo pill did not appear on rapid taps"
 
             # 3. Grant cash, unlock stations/tabs, verify onboarding clears
-            page.evaluate("window.__WATER_POWER_DEBUG__.grantCash(50000)")
+            page.evaluate("window.__WATER_POWER_DEBUG__.grantCash(500000000)")
             page.wait_for_timeout(200)
             assert page.locator(".tab-btn[data-tab='shop']").is_visible(), "Shop did not unlock"
             assert not page.locator("#onboarding-hint").is_visible(), "Onboarding hint should hide after progress"
+            for _ in range(2):
+                for btn in page.locator(".buy-btn[data-action='station']").all():
+                    btn.click()
+                    page.wait_for_timeout(45)
+            page.wait_for_timeout(600)
+            page.screenshot(path=os.path.join(SHOTS_DIR, "step2_valley_sky.png"))
 
             # 4. Test Reset button inside Profile modal
             page.locator("#btn-profile").click()
