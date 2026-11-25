@@ -2,5 +2,6 @@ node_modules/
 dist/
 test_screenshots/
 apk/
+*.zip
 .DS_Store
 *.log
