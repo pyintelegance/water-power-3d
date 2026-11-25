@@ -23,6 +23,7 @@ import {
   getCityEraIndex,
   getCurrentGoalProgress,
   getMaxAffordableStationLevels,
+  getOnboardingUnlocks,
   getPlayerRank,
   getShopPerkCost,
   getStationOutput,
@@ -33,6 +34,7 @@ import {
   getZoneStations,
   getZoneUpgrades,
   loadState,
+  resetAllProgress,
   saveState,
   tickEconomy,
   triggerPrestige
@@ -62,6 +64,9 @@ let eraToastTimer = null;
 let lastStationFloatAt = 0;
 let autoTapAcc = 0;
 let lastZoneStripSig = "";
+let tapCombo = 0;
+let lastTapAt = 0;
+let activeFlyOrbs = 0;
 
 // DOM refs
 const canvas = document.getElementById("game-canvas");
@@ -81,7 +86,15 @@ const zoneStrip = document.getElementById("zone-strip");
 const btnGoalCollapse = document.getElementById("btn-goal-collapse");
 const overdriveFill = document.getElementById("overdrive-fill");
 const overdriveLabel = document.getElementById("overdrive-label");
+const comboPill = document.getElementById("combo-pill");
+const onboardingHint = document.getElementById("onboarding-hint");
 const activeBoostersEl = document.getElementById("active-boosters");
+const cashPillEl = document.querySelector(".cash-pill");
+const crystalPillEl = document.getElementById("hud-crystals");
+const btnResetPrompt = document.getElementById("btn-reset-prompt");
+const resetConfirmBox = document.getElementById("reset-confirm-box");
+const btnResetCancel = document.getElementById("btn-reset-cancel");
+const btnResetConfirm = document.getElementById("btn-reset-confirm");
 const btnPanToggle = document.getElementById("btn-pan-toggle");
 const cardsList = document.getElementById("cards-list");
 const drawer = document.getElementById("drawer");
@@ -118,10 +131,71 @@ document.getElementById("hud-crystal-icon").innerHTML = iconHtml("crystal", "svg
 btnSound.innerHTML = iconHtml("sound_on");
 offlineIcon.innerHTML = iconHtml("power", "svg-ic-hero");
 
-function spawnTapText(x, y, amount) {
+function getComboMult() {
+  return 1 + Math.min(4, Math.floor(tapCombo / 4) * 0.5);
+}
+
+function registerTapCombo() {
+  const now = performance.now();
+  if (now - lastTapAt <= 950) {
+    tapCombo = Math.min(32, tapCombo + 1);
+  } else {
+    tapCombo = 1;
+  }
+  lastTapAt = now;
+  return getComboMult();
+}
+
+function pulseHudPill(el) {
+  if (!el) return;
+  el.classList.remove("pill-pop");
+  void el.offsetWidth;
+  el.classList.add("pill-pop");
+}
+
+function spawnFlyingOrbs(startX, startY, targetEl, kind = "gold", count = 3) {
+  if (!targetEl || activeFlyOrbs >= 16) return;
+  const rect = targetEl.getBoundingClientRect();
+  const endX = rect.left + rect.width * 0.25;
+  const endY = rect.top + rect.height * 0.5;
+  const actualCount = Math.min(count, 16 - activeFlyOrbs);
+
+  for (let i = 0; i < actualCount; i += 1) {
+    activeFlyOrbs += 1;
+    const orb = document.createElement("div");
+    orb.className = `fly-orb ${kind}`;
+    tapFxLayer.appendChild(orb);
+
+    const sx = startX + (Math.random() - 0.5) * 26;
+    const sy = startY + (Math.random() - 0.5) * 18;
+    const cx = (sx + endX) * 0.5 + (Math.random() - 0.5) * 90;
+    const cy = Math.min(sy, endY) - 45 - Math.random() * 45;
+    const dur = 460 + i * 55;
+    const t0 = performance.now();
+
+    const stepOrb = (now) => {
+      const p = Math.min(1, (now - t0) / dur);
+      const inv = 1 - p;
+      const x = inv * inv * sx + 2 * inv * p * cx + p * p * endX;
+      const y = inv * inv * sy + 2 * inv * p * cy + p * p * endY;
+      orb.style.transform = `translate(${x - 6}px, ${y - 6}px) scale(${1 - p * 0.35})`;
+      orb.style.opacity = p > 0.85 ? String((1 - p) / 0.15) : "1";
+      if (p < 1) {
+        requestAnimationFrame(stepOrb);
+      } else {
+        orb.remove();
+        activeFlyOrbs = Math.max(0, activeFlyOrbs - 1);
+        if (i === 0) pulseHudPill(targetEl);
+      }
+    };
+    requestAnimationFrame(stepOrb);
+  }
+}
+
+function spawnTapText(x, y, amount, comboMult = 1) {
   const el = document.createElement("div");
   el.className = "tap-float";
-  el.textContent = `+${formatCompact(amount, "$")}`;
+  el.textContent = comboMult > 1 ? `+${formatCompact(amount, "$")} x${comboMult}` : `+${formatCompact(amount, "$")}`;
   el.style.left = `${x}px`;
   el.style.top = `${y}px`;
   tapFxLayer.appendChild(el);
@@ -130,7 +204,7 @@ function spawnTapText(x, y, amount) {
 
 function spawnStationIncomePopup(stationId, amount) {
   const now = performance.now();
-  if (now - lastStationFloatAt < 180) return;
+  if (now - lastStationFloatAt < 200) return;
   const pos = world.getStationScreenPosition(stationId);
   if (!pos) return;
   const drawerTop = drawer.getBoundingClientRect().top;
@@ -144,6 +218,7 @@ function spawnStationIncomePopup(stationId, amount) {
   el.style.top = `${pos.y}px`;
   tapFxLayer.appendChild(el);
   setTimeout(() => el.remove(), 1020);
+  spawnFlyingOrbs(pos.x, pos.y, cashPillEl, "gold", 2);
 }
 
 function showBannerToast(badge, title) {
@@ -157,11 +232,31 @@ function showBannerToast(badge, title) {
 }
 
 const world = new WaterPowerWorld(canvas, (x, y) => {
-  const earned = applyTap(state);
-  sound.playTap();
-  spawnTapText(x, y, earned);
+  const comboMult = registerTapCombo();
+  const earned = applyTap(state, comboMult);
+  sound.playTap(tapCombo);
+  spawnTapText(x, y, earned, comboMult);
+  spawnFlyingOrbs(x, y, cashPillEl, "gold", 2);
   updateHudAndButtons();
 });
+
+function applyOnboardingVisibility() {
+  const unlocks = getOnboardingUnlocks(state);
+  const upTab = document.querySelector(".tab-btn[data-tab='upgrades']");
+  const shopTab = document.querySelector(".tab-btn[data-tab='shop']");
+  const presTab = document.querySelector(".tab-btn[data-tab='prestige']");
+  if (upTab) upTab.classList.toggle("hidden-locked", !unlocks.upgrades);
+  if (shopTab) shopTab.classList.toggle("hidden-locked", !unlocks.shop);
+  if (presTab) presTab.classList.toggle("hidden-locked", !unlocks.prestige);
+  zoneStrip.classList.toggle("hidden-locked", !unlocks.zones);
+
+  const showHint =
+    state.activeZoneId === "valley" &&
+    state.stations.s0?.level === 1 &&
+    !state.stations.s1?.unlocked &&
+    state.lifetimeCash < 25;
+  onboardingHint.classList.toggle("hidden", !showHint);
+}
 
 function renderZoneStrip() {
   const curZone = getActiveZone(state);
@@ -527,6 +622,8 @@ function updateHudAndButtons() {
   if (claimed.length > 0) {
     const lastGoal = claimed[claimed.length - 1];
     sound.playUnlock();
+    world.triggerShake(0.18);
+    spawnFlyingOrbs(window.innerWidth * 0.4, 130, crystalPillEl, "crystal", 4);
     showBannerToast(
       `ЦЕЛЬ ВЫПОЛНЕНА · +${formatCompact(lastGoal.rewardCash, "$")}`,
       lastGoal.title
@@ -536,6 +633,7 @@ function updateHudAndButtons() {
   const newAchs = checkAchievements(state);
   if (newAchs.length > 0) {
     sound.playUnlock();
+    spawnFlyingOrbs(window.innerWidth * 0.4, 150, crystalPillEl, "crystal", 4);
     showBannerToast(`ДОСТИЖЕНИЕ · +${newAchs[0].crystals} крист.`, newAchs[0].name);
   }
 
@@ -562,6 +660,18 @@ function updateHudAndButtons() {
   }
 
   renderZoneStrip();
+  applyOnboardingVisibility();
+
+  if (tapCombo > 1 && performance.now() - lastTapAt > 1050) {
+    tapCombo = 0;
+  }
+  const cMult = getComboMult();
+  if (cMult > 1) {
+    comboPill.classList.remove("hidden");
+    comboPill.textContent = `КОМБО x${cMult}`;
+  } else {
+    comboPill.classList.add("hidden");
+  }
 
   const pct = Math.round(state.overdrive * 100);
   overdriveFill.style.width = `${pct}%`;
@@ -590,8 +700,12 @@ cardsList.addEventListener("click", (e) => {
   if (action === "station") {
     const wasUnlocked = state.stations[id]?.unlocked;
     if (buyStationAction(state, id, buyMult)) {
-      if (!wasUnlocked) sound.playUnlock();
-      else sound.playBuy();
+      if (!wasUnlocked) {
+        sound.playUnlock();
+        world.triggerShake(0.24);
+      } else {
+        sound.playBuy();
+      }
       world.triggerStationPulse(id);
       saveState(state);
       renderCards();
@@ -695,12 +809,37 @@ btnBuyMult.addEventListener("click", () => {
 btnCollapse.addEventListener("click", () => drawer.classList.toggle("collapsed"));
 
 btnProfile.addEventListener("click", () => {
+  resetConfirmBox.classList.add("hidden");
   renderProfileModal();
   profileModal.classList.remove("hidden");
 });
 btnCloseProfile.addEventListener("click", () => {
   profileModal.classList.add("hidden");
   saveState(state);
+});
+
+btnResetPrompt.addEventListener("click", () => {
+  resetConfirmBox.classList.toggle("hidden");
+});
+btnResetCancel.addEventListener("click", () => {
+  resetConfirmBox.classList.add("hidden");
+});
+btnResetConfirm.addEventListener("click", () => {
+  resetAllProgress(state);
+  resetConfirmBox.classList.add("hidden");
+  profileModal.classList.add("hidden");
+  lastEraIndex = 0;
+  lastZoneStripSig = "";
+  tapCombo = 0;
+  activeTab = "stations";
+  document.querySelectorAll(".tab-btn").forEach((b) => {
+    b.classList.toggle("active", b.dataset.tab === "stations");
+  });
+  world.setZoneTheme("valley");
+  world.setCameraPreset(0);
+  renderCards();
+  updateHudAndButtons();
+  showBannerToast("НОВАЯ ИГРА", "Прогресс полностью сброшен");
 });
 avatarPicker.addEventListener("click", (e) => {
   const opt = e.target.closest(".avatar-opt");
@@ -723,12 +862,14 @@ window.addEventListener("keydown", (e) => {
   if (e.target && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")) return;
   if (e.code === "Space") {
     e.preventDefault();
-    const earned = applyTap(state);
-    sound.playTap();
+    const comboMult = registerTapCombo();
+    const earned = applyTap(state, comboMult);
+    sound.playTap(tapCombo);
     const rect = canvas.getBoundingClientRect();
     const x = rect.left + rect.width * (window.innerWidth >= 1024 ? 0.34 : 0.45);
     const y = rect.top + rect.height * 0.5;
-    spawnTapText(x, y, earned);
+    spawnTapText(x, y, earned, comboMult);
+    spawnFlyingOrbs(x, y, cashPillEl, "gold", 2);
     world.spawnSplash(-1.2, 0.5, 2.0, 8);
     updateHudAndButtons();
     return;

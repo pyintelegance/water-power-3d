@@ -69,15 +69,16 @@ export class SoundEngine {
     }
   }
 
-  playTap() {
+  playTap(comboLevel = 1) {
     const ctx = this.ensureContext();
     if (!ctx) return;
     const now = ctx.currentTime;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = "sine";
-    osc.frequency.setValueAtTime(340 + Math.random() * 90, now);
-    osc.frequency.exponentialRampToValueAtTime(680, now + 0.07);
+    const pitchBoost = Math.min(360, (comboLevel - 1) * 26);
+    osc.frequency.setValueAtTime(340 + pitchBoost + Math.random() * 40, now);
+    osc.frequency.exponentialRampToValueAtTime(660 + pitchBoost, now + 0.07);
     gain.gain.setValueAtTime(0.08, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
     osc.connect(gain);

@@ -73,6 +73,8 @@
         <span class="overdrive-label" id="overdrive-label">ТАПАЙ ПО ВОДЕ ДЛЯ РАЗГОНА (x1.0)</span>
       </div>
 
+      <div class="combo-pill hidden" id="combo-pill">КОМБО x1.5</div>
+
       <div class="cam-bar" role="group" aria-label="Управление камерой">
         <button class="cam-btn active" data-cam="0">Обзор</button>
         <button class="cam-btn" data-cam="1">Станции</button>
@@ -87,6 +89,11 @@
     <div class="era-toast hidden" id="era-toast">
       <span class="era-toast-badge" id="era-toast-badge">ЦЕЛЬ ВЫПОЛНЕНА</span>
       <strong id="era-toast-title">Деревня у воды</strong>
+    </div>
+
+    <!-- First-minute Onboarding Hint -->
+    <div class="onboarding-hint hidden" id="onboarding-hint">
+      Нажимай на реку для энергии и прокачай Колесо!
     </div>
 
     <!-- Desktop Controls Hint (visible >= 1024px) -->
@@ -138,6 +145,17 @@
 
         <h3 class="ach-heading">Достижения</h3>
         <div class="ach-list" id="ach-list"></div>
+
+        <div class="reset-section">
+          <button class="danger-outline-btn" id="btn-reset-prompt">Сбросить прогресс (Reset)</button>
+          <div class="reset-confirm-box hidden" id="reset-confirm-box">
+            <div>Точно сбросить весь прогресс, локации и постройки?</div>
+            <div class="modal-actions-row">
+              <button class="secondary-btn" id="btn-reset-cancel">Отмена</button>
+              <button class="danger-btn" id="btn-reset-confirm">Да, сбросить</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 

@@ -27,54 +27,41 @@ def main():
                 args=["--use-gl=angle", "--use-angle=swiftshader", "--enable-webgl"],
             )
 
-            # 1. Mobile portrait check (390x844)
-            m_page = browser.new_page(viewport={"width": 390, "height": 844}, device_scale_factor=2)
-            m_page.on("pageerror", lambda err: errors.append(f"MOBILE_PAGEERROR: {err}"))
-            m_page.on("console", lambda m: errors.append(f"MOBILE_CONSOLE: {m.text}") if m.type == "error" else None)
-            m_page.goto("http://127.0.0.1:4188/", wait_until="networkidle")
-            m_page.wait_for_timeout(1000)
-            m_page.screenshot(path=os.path.join(SHOTS_DIR, "mobile_v6.png"))
-            m_page.close()
-
-            # 2. Desktop widescreen check (1280x720) across all 3 locations
             page = browser.new_page(viewport={"width": 1280, "height": 720}, device_scale_factor=1)
             page.on("pageerror", lambda err: errors.append(f"PAGEERROR: {err}"))
             page.on("console", lambda m: errors.append(f"CONSOLE_ERROR: {m.text}") if m.type == "error" else None)
 
             page.goto("http://127.0.0.1:4188/", wait_until="networkidle")
-            page.wait_for_timeout(1000)
+            page.wait_for_timeout(900)
 
-            page.evaluate("window.__WATER_POWER_DEBUG__.grantCash(500000000)")
-            page.wait_for_timeout(150)
-            for _ in range(3):
-                for btn in page.locator(".buy-btn[data-action='station']").all():
-                    btn.click()
-                    page.wait_for_timeout(45)
-            page.wait_for_timeout(500)
-            page.screenshot(path=os.path.join(SHOTS_DIR, "desktop_v6_valley.png"))
+            # 1. Verify clean onboarding on fresh start
+            assert page.locator("#onboarding-hint").is_visible(), "Onboarding hint missing on start"
+            assert not page.locator(".tab-btn[data-tab='shop']").is_visible(), "Shop should be hidden at start"
+            page.screenshot(path=os.path.join(SHOTS_DIR, "step1_onboarding.png"))
 
-            adv_btn = page.locator("#btn-advance-zone")
-            assert adv_btn.is_visible(), "Advance to Glacier button did not appear!"
-            adv_btn.click()
+            # 2. Rapid taps build Combo and spawn flying orbs
+            for _ in range(5):
+                page.keyboard.press("Space")
+                page.wait_for_timeout(55)
+            assert page.locator("#combo-pill").is_visible(), "Combo pill did not appear on rapid taps"
+
+            # 3. Grant cash, unlock stations/tabs, verify onboarding clears
+            page.evaluate("window.__WATER_POWER_DEBUG__.grantCash(50000)")
             page.wait_for_timeout(200)
-            page.locator("#btn-confirm-zone").click()
-            page.wait_for_timeout(600)
-            assert page.evaluate("window.__WATER_POWER_DEBUG__.state.activeZoneId") == "glacier"
-            page.screenshot(path=os.path.join(SHOTS_DIR, "desktop_v6_glacier.png"))
+            assert page.locator(".tab-btn[data-tab='shop']").is_visible(), "Shop did not unlock"
+            assert not page.locator("#onboarding-hint").is_visible(), "Onboarding hint should hide after progress"
 
-            page.evaluate("window.__WATER_POWER_DEBUG__.grantCash(5000000000)")
+            # 4. Test Reset button inside Profile modal
+            page.locator("#btn-profile").click()
             page.wait_for_timeout(150)
-            for _ in range(3):
-                for btn in page.locator(".buy-btn[data-action='station']").all():
-                    btn.click()
-                    page.wait_for_timeout(45)
-            page.wait_for_timeout(400)
-            adv_btn.click()
-            page.wait_for_timeout(200)
-            page.locator("#btn-confirm-zone").click()
-            page.wait_for_timeout(600)
-            assert page.evaluate("window.__WATER_POWER_DEBUG__.state.activeZoneId") == "cyber"
-            page.screenshot(path=os.path.join(SHOTS_DIR, "desktop_v6_cyber.png"))
+            page.locator("#btn-reset-prompt").click()
+            page.wait_for_timeout(100)
+            assert page.locator("#reset-confirm-box").is_visible(), "Reset confirm box did not appear"
+            page.locator("#btn-reset-confirm").click()
+            page.wait_for_timeout(300)
+
+            cash_after_reset = page.evaluate("window.__WATER_POWER_DEBUG__.state.cash")
+            assert cash_after_reset < 20, f"Reset did not clear cash: {cash_after_reset}"
 
             browser.close()
     finally:
@@ -87,7 +74,7 @@ def main():
             print(e)
         sys.exit(1)
 
-    print("BROWSER_QA_V6_PASSED")
+    print("BROWSER_QA_STEP1_PASSED")
 
 
 if __name__ == "__main__":

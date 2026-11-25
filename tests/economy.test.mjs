@@ -13,9 +13,11 @@ import {
   computePendingEngineers,
   createInitialState,
   getCurrentGoalProgress,
+  getOnboardingUnlocks,
   getTotals,
   getZoneStations,
   getZoneUpgrades,
+  resetAllProgress,
   tickEconomy,
   triggerPrestige
 } from "../src/economy.js";
@@ -56,6 +58,27 @@ test("reaching 1.8 MW enables transition to Glacier and resets stations/cash cle
   // New location has brand-new stations & upgrades
   assert.equal(getZoneStations(s.activeZoneId)[0].name, "Ледовое колесо");
   assert.equal(getZoneUpgrades(s.activeZoneId)[0].name, "Антилёд-подогрев");
+});
+
+test("onboarding unlocks gradually and resetAllProgress restores fresh state", () => {
+  const s = createInitialState(0);
+  let u = getOnboardingUnlocks(s);
+  assert.equal(u.upgrades, false);
+  assert.equal(u.shop, false);
+  assert.equal(u.prestige, false);
+
+  s.cash = 5000;
+  s.lifetimeCash = 5000;
+  buyStationAction(s, "s1", "x1");
+  u = getOnboardingUnlocks(s);
+  assert.equal(u.upgrades, true);
+  assert.equal(u.shop, true);
+  assert.equal(u.prestige, true);
+
+  resetAllProgress(s);
+  assert.equal(s.cash, 0);
+  assert.equal(s.activeZoneId, "valley");
+  assert.equal(s.stations.s1.unlocked, false);
 });
 
 test("mining cycles, boosters, perks, achievements, and prestige work", () => {

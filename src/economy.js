@@ -577,14 +577,39 @@ export function triggerPrestige(state) {
   return gained;
 }
 
-export function applyTap(state) {
+export function applyTap(state, comboMult = 1) {
   const { tapBonus } = getTotals(state);
-  state.cash += tapBonus;
-  state.runCash += tapBonus;
-  state.lifetimeCash += tapBonus;
+  const gained = tapBonus * comboMult;
+  state.cash += gained;
+  state.runCash += gained;
+  state.lifetimeCash += gained;
   state.overdrive = Math.min(1, state.overdrive + 0.16);
   state.profile.totalTaps = (state.profile.totalTaps || 0) + 1;
-  return tapBonus;
+  return gained;
+}
+
+export function getOnboardingUnlocks(state) {
+  const veteran =
+    (state.engineers || 0) > 0 ||
+    (state.completedZones?.length || 0) > 0 ||
+    state.activeZoneId !== "valley";
+  return {
+    upgrades: veteran || state.stations.s0?.level >= 2 || state.stations.s1?.unlocked || state.lifetimeCash >= 30,
+    shop: veteran || state.stations.s1?.unlocked || state.lifetimeCash >= 150,
+    prestige: veteran || state.lifetimeCash >= 2500,
+    zones: veteran || state.stations.s1?.unlocked || state.lifetimeCash >= 180
+  };
+}
+
+export function resetAllProgress(state) {
+  try {
+    localStorage.removeItem(SAVE_KEY);
+  } catch {
+    // Ignore storage errors
+  }
+  const fresh = createInitialState(0);
+  Object.assign(state, fresh);
+  return state;
 }
 
 export function tickEconomy(state, dtSeconds) {

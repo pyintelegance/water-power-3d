@@ -48,6 +48,7 @@ export class WaterPowerWorld {
     this.panOffset = new THREE.Vector3(0, 0, 0);
     this.zoomScale = 1.0;
     this.desiredZoomScale = 1.0;
+    this.shakeAmount = 0;
     this.keysHeld = new Set();
     this.cameraPos = CAMERA_PRESETS[0].pos.clone();
     this.targetOffset = CAMERA_PRESETS[0].target.clone();
@@ -795,6 +796,10 @@ export class WaterPowerWorld {
     }
   }
 
+  triggerShake(intensity = 0.25) {
+    this.shakeAmount = Math.max(this.shakeAmount, intensity);
+  }
+
   getStationScreenPosition(stationId) {
     const node = this.stationNodes[stationId];
     if (!node) return null;
@@ -919,10 +924,17 @@ export class WaterPowerWorld {
       this.panByDelta((kx * 0.72 + kz * 0.68) * speed, (kz * 0.72 - kx * 0.68) * speed);
     }
 
-    // Smooth preset camera transition
+    // Smooth preset camera transition + micro-shake
     this.cameraPos.lerp(this.desiredCameraPos, 0.12);
     this.targetOffset.lerp(this.desiredTarget, 0.12);
     this.camera.position.copy(this.cameraPos);
+    if (this.shakeAmount > 0.005) {
+      this.camera.position.x += (Math.random() - 0.5) * this.shakeAmount;
+      this.camera.position.y += (Math.random() - 0.5) * this.shakeAmount;
+      this.shakeAmount *= 0.84;
+    } else {
+      this.shakeAmount = 0;
+    }
     this.camera.lookAt(this.targetOffset);
 
     // Animate river waves
