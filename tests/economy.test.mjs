@@ -24,6 +24,7 @@ import {
   tickEconomy,
   triggerPrestige
 } from "../src/economy.js";
+import { setLang, t, tStationField, tZoneField } from "../src/i18n.js";
 
 test("initial state starts in Green Valley with valley stations and upgrades", () => {
   const s = createInitialState(0);
@@ -124,4 +125,14 @@ test("mini-quests advance on taps and river events award cash or crystals", () =
   assert.equal(droneRes.crystals, 2);
   const crateRes = collectRiverEventReward(s, "crate");
   assert.ok(crateRes.cash >= 120);
+});
+
+test("i18n switches cleanly between EN and RU across UI and station catalog", () => {
+  setLang("en");
+  assert.equal(t("tabStations"), "Stations");
+  const st0 = getZoneStations("valley")[0];
+  assert.equal(tStationField("valley", st0, "name"), "Water Wheel");
+  setLang("ru");
+  assert.equal(t("tabStations"), "Станции");
+  assert.equal(tStationField("valley", st0, "name"), "Водяное колесо");
 });

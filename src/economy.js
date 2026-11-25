@@ -1,3 +1,5 @@
+import { getLang } from "./i18n.js";
+
 export const SAVE_KEY = "water_power_3d_save_v4";
 
 export const ZONES = [
@@ -444,25 +446,27 @@ export function getUpgradeCost(def, currentLevel) {
 export function getUpgradeEffectText(state, def) {
   const lvl = state.upgrades[def.id] || 0;
   const totals = getTotals(state);
+  const en = getLang() === "en";
+  const sec = en ? "s" : "с";
   if (def.kind === "flow") {
     const cur = 1 + lvl * 0.22;
     const nxt = 1 + (lvl + 1) * 0.22;
-    return `Поток: x${cur.toFixed(2)} → x${nxt.toFixed(2)} (+${formatCompact((totals.baseIncomePerSec * 0.22) / cur, "$")}/с)`;
+    return `${en ? "Flow" : "Поток"}: x${cur.toFixed(2)} → x${nxt.toFixed(2)} (+${formatCompact((totals.baseIncomePerSec * 0.22) / cur, "$")}/${sec})`;
   }
   if (def.kind === "dam") {
     const cur = 1 + lvl * 0.35;
     const nxt = 1 + (lvl + 1) * 0.35;
-    return `Мощь: x${cur.toFixed(2)} → x${nxt.toFixed(2)} (+${formatCompact((totals.baseIncomePerSec * 0.35) / cur, "$")}/с)`;
+    return `${en ? "Output" : "Мощь"}: x${cur.toFixed(2)} → x${nxt.toFixed(2)} (+${formatCompact((totals.baseIncomePerSec * 0.35) / cur, "$")}/${sec})`;
   }
   if (def.kind === "tap") {
     const curTap = totals.tapBonus;
     const nxtTap = curTap * ((1 + (lvl + 1) * 0.5) / (1 + lvl * 0.5));
-    return `Клик по воде: ${formatCompact(curTap, "$")} → ${formatCompact(nxtTap, "$")}`;
+    return `${en ? "River Tap" : "Клик по воде"}: ${formatCompact(curTap, "$")} → ${formatCompact(nxtTap, "$")}`;
   }
   if (def.kind === "tariff") {
     const cur = 1 + lvl * 0.4;
     const nxt = 1 + (lvl + 1) * 0.4;
-    return `Тариф: x${cur.toFixed(1)} → x${nxt.toFixed(1)} (+${formatCompact((totals.baseIncomePerSec * 0.4) / cur, "$")}/с)`;
+    return `${en ? "Tariff" : "Тариф"}: x${cur.toFixed(1)} → x${nxt.toFixed(1)} (+${formatCompact((totals.baseIncomePerSec * 0.4) / cur, "$")}/${sec})`;
   }
   return def.targetLabel;
 }

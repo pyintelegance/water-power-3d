@@ -46,6 +46,21 @@ import { iconHtml } from "./icons.js";
 import { SoundEngine } from "./audio.js";
 import { PlatformBridge } from "./platform.js";
 import { WaterPowerWorld } from "./world.js";
+import {
+  getLang,
+  setLang,
+  t,
+  tAchField,
+  tBoosterField,
+  tEraName,
+  tGoalField,
+  tPerkField,
+  tQuestTitle,
+  tRank,
+  tStationField,
+  tUpgradeField,
+  tZoneField
+} from "./i18n.js";
 
 const { state, offlineEarned, offlineSeconds } = loadState();
 const sound = new SoundEngine();
@@ -109,6 +124,9 @@ const btnBuyMult = document.getElementById("btn-buy-mult");
 const btnCollapse = document.getElementById("btn-collapse");
 const btnProfile = document.getElementById("btn-profile");
 const btnSound = document.getElementById("btn-sound");
+const btnLang = document.getElementById("btn-lang");
+const btnFullscreen = document.getElementById("btn-fullscreen");
+const pcHintsEl = document.getElementById("pc-hints");
 const eraToast = document.getElementById("era-toast");
 const eraToastBadge = document.getElementById("era-toast-badge");
 const eraToastTitle = document.getElementById("era-toast-title");
@@ -136,7 +154,58 @@ document.getElementById("hud-cash-icon").innerHTML = iconHtml("cash");
 document.getElementById("hud-power-icon").innerHTML = iconHtml("power");
 document.getElementById("hud-crystal-icon").innerHTML = iconHtml("crystal", "svg-ic-sm");
 btnSound.innerHTML = iconHtml("sound_on");
+if (btnFullscreen) btnFullscreen.innerHTML = iconHtml("fullscreen");
 offlineIcon.innerHTML = iconHtml("power", "svg-ic-hero");
+
+function applyStaticTranslations() {
+  document.title = t("pageTitle");
+  document.documentElement.lang = getLang();
+  if (btnLang) {
+    btnLang.textContent = getLang().toUpperCase();
+    btnLang.title = t("titleLang");
+  }
+  if (btnFullscreen) btnFullscreen.title = t("titleFullscreen");
+  btnProfile.title = t("titleProfile");
+  btnSound.title = t("titleSound");
+  crystalPillEl.title = t("titleCrystals");
+  btnGoalCollapse.title = t("collapseGoal");
+  btnCollapse.title = t("collapseDrawer");
+  onboardingHint.textContent = t("onboardingHint");
+  if (pcHintsEl) pcHintsEl.innerHTML = t("pcHints");
+
+  const tabLabels = { stations: "tabStations", upgrades: "tabUpgrades", shop: "tabShop", prestige: "tabPrestige" };
+  for (const [key, tKey] of Object.entries(tabLabels)) {
+    const el = document.querySelector(`.tab-btn[data-tab="${key}"]`);
+    if (el) el.textContent = t(tKey);
+  }
+  const camLabels = { 0: "camOverview", 1: "camStations", 3: "camCity" };
+  for (const [camIdx, tKey] of Object.entries(camLabels)) {
+    const el = document.querySelector(`.cam-btn[data-cam="${camIdx}"]`);
+    if (el) el.textContent = t(tKey);
+  }
+  btnPanToggle.textContent = t(world.panEnabled ? "panOn" : "panOff");
+
+  const profileTitleEl = document.getElementById("profile-modal-title");
+  if (profileTitleEl) profileTitleEl.textContent = t("profileTitle");
+  profileNameInput.placeholder = t("profileNamePlaceholder");
+  const achHeadingEl = document.getElementById("ach-heading");
+  if (achHeadingEl) achHeadingEl.textContent = t("achHeading");
+  btnResetPrompt.textContent = t("resetBtnPrompt");
+  const resetConfirmTextEl = document.getElementById("reset-confirm-text");
+  if (resetConfirmTextEl) resetConfirmTextEl.textContent = t("resetConfirmText");
+  btnResetCancel.textContent = t("resetCancel");
+  btnResetConfirm.textContent = t("resetConfirm");
+
+  const zoneResetBoxEl = document.getElementById("zone-reset-box");
+  if (zoneResetBoxEl) zoneResetBoxEl.innerHTML = t("zoneResetBullets");
+  btnCancelZone.textContent = t("zoneCancel");
+  btnConfirmZone.textContent = t("zoneConfirm");
+
+  const offlineTitleEl = document.getElementById("offline-title");
+  if (offlineTitleEl) offlineTitleEl.textContent = t("offlineTitle");
+  btnClaimOffline.textContent = t("offlineClaim");
+  lastZoneStripSig = "";
+}
 
 function getComboMult() {
   return 1 + Math.min(4, Math.floor(tapCombo / 4) * 0.5);
@@ -245,10 +314,10 @@ function handleEventCollected(collected) {
   world.triggerShake(0.16);
   if (reward.crystals > 0) {
     spawnFlyingOrbs(collected.screenX, collected.screenY, crystalPillEl, "crystal", 5);
-    showBannerToast("ДРОН ПОЙМАН", `+${reward.crystals} крист.`);
+    showBannerToast(t("toastDrone"), `+${reward.crystals} ${t("crystalsShort")}`);
   } else {
     spawnFlyingOrbs(collected.screenX, collected.screenY, cashPillEl, "gold", 6);
-    showBannerToast("ЭНЕРГО-ГРУЗ", `+${formatCompact(reward.cash, "$")}`);
+    showBannerToast(t("toastCrate"), `+${formatCompact(reward.cash, "$")}`);
   }
   saveState(state);
   updateHudAndButtons();
@@ -276,6 +345,7 @@ function applyOnboardingVisibility() {
   if (shopTab) shopTab.classList.toggle("hidden-locked", !unlocks.shop);
   if (presTab) presTab.classList.toggle("hidden-locked", !unlocks.prestige);
   zoneStrip.classList.toggle("hidden-locked", !unlocks.zones);
+  document.body.classList.toggle("zones-unlocked", unlocks.zones);
 
   const showHint =
     state.activeZoneId === "valley" &&
@@ -288,7 +358,7 @@ function applyOnboardingVisibility() {
 function renderZoneStrip() {
   const curZone = getActiveZone(state);
   const readyNext = canAdvanceZone(state);
-  const sig = `${state.activeZoneId}|${(state.completedZones || []).join(",")}|${readyNext?.id || ""}`;
+  const sig = `${getLang()}|${state.activeZoneId}|${(state.completedZones || []).join(",")}|${readyNext?.id || ""}`;
   if (sig === lastZoneStripSig) return;
   lastZoneStripSig = sig;
   zoneStrip.innerHTML = "";
@@ -296,24 +366,25 @@ function renderZoneStrip() {
   for (const z of ZONES) {
     const isCurrent = state.activeZoneId === z.id;
     const isCompleted = state.completedZones?.includes(z.id);
+    const shortName = tZoneField(z, "shortName");
     const chip = document.createElement("div");
 
     if (isCurrent) {
       chip.className = "zone-chip active";
-      chip.innerHTML = `${iconHtml(z.icon, "svg-ic-sm")}<span>${z.shortName} (x${z.incomeMult})</span>`;
+      chip.innerHTML = `${iconHtml(z.icon, "svg-ic-sm")}<span>${t("zoneCurrentBadge", { name: shortName, mult: z.incomeMult })}</span>`;
     } else if (isCompleted) {
       chip.className = "zone-chip done";
-      chip.innerHTML = `${iconHtml(z.icon, "svg-ic-sm")}<span>${z.shortName} ✓</span>`;
+      chip.innerHTML = `${iconHtml(z.icon, "svg-ic-sm")}<span>${t("zoneDoneBadge", { name: shortName })}</span>`;
     } else if (readyNext && readyNext.id === z.id) {
       chip.className = "zone-chip active";
-      chip.innerHTML = `${iconHtml(z.icon, "svg-ic-sm")}<span>${z.shortName} · Открыта!</span>`;
+      chip.innerHTML = `${iconHtml(z.icon, "svg-ic-sm")}<span>${t("zoneReadyBadge", { name: shortName })}</span>`;
     } else {
       chip.className = "zone-chip locked";
       const reqText =
         z.index === curZone.index + 1 && curZone.nextZoneTargetWatts
           ? formatWatts(curZone.nextZoneTargetWatts)
-          : "Далее";
-      chip.innerHTML = `${iconHtml(z.icon, "svg-ic-sm")}<span>${z.shortName} (${reqText})</span>`;
+          : t("zoneNextLabel");
+      chip.innerHTML = `${iconHtml(z.icon, "svg-ic-sm")}<span>${t("zoneLockedBadge", { name: shortName, req: reqText })}</span>`;
     }
     zoneStrip.appendChild(chip);
   }
@@ -323,35 +394,38 @@ function renderCards() {
   cardsList.innerHTML = "";
   const zoneStations = getZoneStations(state.activeZoneId);
   const zoneUpgrades = getZoneUpgrades(state.activeZoneId);
+  const sec = t("secUnit");
 
   if (activeTab === "stations") {
     for (const def of zoneStations) {
       const st = state.stations[def.id];
       const out = getStationOutput(state, def);
+      const stName = tStationField(state.activeZoneId, def, "name");
+      const stDesc = tStationField(state.activeZoneId, def, "desc");
 
       let cost = 0;
-      let actionLabel = "Улучшить";
+      let actionLabel = t("actionUpgrade");
       let buyCount = 1;
 
       if (!st.unlocked) {
         cost = def.unlockCost;
-        actionLabel = "Построить";
+        actionLabel = t("actionBuild");
       } else if (buyMult === "x10") {
         buyCount = 10;
         cost = getBulkStationCost(def, st.level, 10);
-        actionLabel = "+10 ур.";
+        actionLabel = t("actionUpN", { n: 10 });
       } else if (buyMult === "MAX") {
         buyCount = Math.max(1, getMaxAffordableStationLevels(def, st.level, state.cash));
         cost = getBulkStationCost(def, st.level, buyCount);
-        actionLabel = `+${buyCount} ур.`;
+        actionLabel = t("actionUpN", { n: buyCount });
       } else {
         cost = getBulkStationCost(def, st.level, 1);
-        actionLabel = "+1 ур.";
+        actionLabel = t("actionUp1");
       }
 
       const preview = getStationUpgradePreview(state, def, buyCount);
       const milestoneNote =
-        st.unlocked && preview.nextMilestone ? ` · x2 на ур.${preview.nextMilestone}` : "";
+        st.unlocked && preview.nextMilestone ? t("milestoneNote", { m: preview.nextMilestone }) : "";
 
       const card = document.createElement("div");
       card.className = `card${st.unlocked ? "" : " locked"}`;
@@ -360,28 +434,28 @@ function renderCards() {
           <div class="card-icon-box">${iconHtml(def.icon, "svg-ic-lg")}</div>
           <div class="card-info">
             <div class="card-title">
-              <span>${def.name}</span>
-              <span class="lvl-badge">${st.unlocked ? `Ур. ${st.level}` : "Не построено"}</span>
+              <span>${stName}</span>
+              <span class="lvl-badge">${st.unlocked ? t("lvlBadge", { lvl: st.level }) : t("notBuilt")}</span>
             </div>
             <div class="card-meta">
               ${
                 st.unlocked
-                  ? `Добыча: +${formatCompact(out.incomePerSec, "$")}/с · ${formatWatts(out.watts)}`
-                  : def.desc
+                  ? t("stationOutput", { cash: formatCompact(out.incomePerSec, "$"), sec, watts: formatWatts(out.watts) })
+                  : stDesc
               }
             </div>
             <div class="card-delta">
               ${
                 st.unlocked
-                  ? `Прирост: +${formatCompact(preview.deltaIncome, "$")}/с (+${formatWatts(preview.deltaWatts)})${milestoneNote}`
-                  : `Запуск: +${formatCompact(preview.deltaIncome, "$")}/с · ${formatWatts(preview.deltaWatts)}`
+                  ? t("stationGain", { cash: formatCompact(preview.deltaIncome, "$"), sec, watts: formatWatts(preview.deltaWatts), ms: milestoneNote })
+                  : t("stationLaunch", { cash: formatCompact(preview.deltaIncome, "$"), sec, watts: formatWatts(preview.deltaWatts) })
               }
             </div>
             ${
               st.unlocked
                 ? `<div class="cycle-row">
                     <div class="cycle-track"><div class="cycle-fill" data-cycle="${def.id}" style="width:${Math.round((st.cycleProgress || 0) * 100)}%"></div></div>
-                    <span class="cycle-mined" data-mined="${def.id}">Добыто: ${formatCompact(st.totalMined || 0, "$")}</span>
+                    <span class="cycle-mined" data-mined="${def.id}">${t("minedTotal", { cash: formatCompact(st.totalMined || 0, "$") })}</span>
                   </div>`
                 : ""
             }
@@ -399,7 +473,9 @@ function renderCards() {
       const lvl = state.upgrades[up.id] || 0;
       const isMax = lvl >= up.maxLevel;
       const cost = isMax ? 0 : getUpgradeCost(up, lvl);
-      const effectText = isMax ? "Максимальный уровень" : getUpgradeEffectText(state, up);
+      const effectText = isMax ? t("maxLevel") : getUpgradeEffectText(state, up);
+      const upName = tUpgradeField(state.activeZoneId, up, "name");
+      const upTarget = tUpgradeField(state.activeZoneId, up, "targetLabel");
 
       const card = document.createElement("div");
       card.className = "card";
@@ -408,16 +484,16 @@ function renderCards() {
           <div class="card-icon-box">${iconHtml(up.icon, "svg-ic-lg")}</div>
           <div class="card-info">
             <div class="card-title">
-              <span>${up.name}</span>
+              <span>${upName}</span>
               <span class="lvl-badge">${lvl}/${up.maxLevel}</span>
             </div>
-            <div class="card-meta">${up.targetLabel}</div>
+            <div class="card-meta">${upTarget}</div>
             <div class="card-delta">${effectText}</div>
           </div>
         </div>
         <button class="buy-btn" data-action="upgrade" data-id="${up.id}" data-cost="${cost}" ${isMax ? "disabled" : ""}>
-          <span>${isMax ? "МАКС" : formatCompact(cost, "$")}</span>
-          <span class="buy-action">${isMax ? "Готово" : "Улучшить"}</span>
+          <span>${isMax ? t("actionMax") : formatCompact(cost, "$")}</span>
+          <span class="buy-action">${isMax ? t("actionDone") : t("actionUpgrade")}</span>
         </button>
       `;
       cardsList.appendChild(card);
@@ -425,7 +501,7 @@ function renderCards() {
   } else if (activeTab === "shop") {
     const bHeader = document.createElement("div");
     bHeader.className = "shop-section-title";
-    bHeader.textContent = "Активные бустеры";
+    bHeader.textContent = t("shopBoostersHead");
     cardsList.appendChild(bHeader);
 
     for (const b of BOOSTER_DEFS) {
@@ -438,10 +514,10 @@ function renderCards() {
           <div class="card-icon-box">${iconHtml(b.icon, "svg-ic-lg")}</div>
           <div class="card-info">
             <div class="card-title">
-              <span>${b.name}</span>
-              ${rem > 0 ? `<span class="lvl-badge">${rem}с</span>` : ""}
+              <span>${tBoosterField(b, "name")}</span>
+              ${rem > 0 ? `<span class="lvl-badge">${rem}${sec}</span>` : ""}
             </div>
-            <div class="card-meta">${b.desc}</div>
+            <div class="card-meta">${tBoosterField(b, "desc")}</div>
           </div>
         </div>
         <div class="btn-stack">
@@ -449,13 +525,13 @@ function renderCards() {
             cashCost !== null
               ? `<button class="buy-btn" data-action="booster-cash" data-id="${b.id}" data-cost="${cashCost}">
                   <span>${formatCompact(cashCost, "$")}</span>
-                  <span class="buy-action">Активировать</span>
+                  <span class="buy-action">${t("actionActivate")}</span>
                 </button>`
               : ""
           }
           <button class="buy-btn crystal-btn" data-action="booster-crystal" data-id="${b.id}" data-crystal-cost="${b.crystalCost}">
-            <span>${b.crystalCost} крист.</span>
-            <span class="buy-action">За кристаллы</span>
+            <span>${t("crystalCount", { n: b.crystalCost })}</span>
+            <span class="buy-action">${t("actionForCrystals")}</span>
           </button>
         </div>
       `;
@@ -464,7 +540,7 @@ function renderCards() {
 
     const pHeader = document.createElement("div");
     pHeader.className = "shop-section-title";
-    pHeader.textContent = "Постоянные модули (для всех локаций)";
+    pHeader.textContent = t("shopPerksHead");
     cardsList.appendChild(pHeader);
 
     for (const perk of SHOP_PERK_DEFS) {
@@ -478,15 +554,15 @@ function renderCards() {
           <div class="card-icon-box">${iconHtml(perk.icon, "svg-ic-lg")}</div>
           <div class="card-info">
             <div class="card-title">
-              <span>${perk.name}</span>
+              <span>${tPerkField(perk, "name")}</span>
               <span class="lvl-badge">${lvl}/${perk.maxLevel}</span>
             </div>
-            <div class="card-meta">${perk.desc}</div>
+            <div class="card-meta">${tPerkField(perk, "desc")}</div>
           </div>
         </div>
         <button class="buy-btn crystal-btn" data-action="perk" data-id="${perk.id}" data-crystal-cost="${cCost}" ${isMax ? "disabled" : ""}>
-          <span>${isMax ? "МАКС" : `${cCost} крист.`}</span>
-          <span class="buy-action">${isMax ? "Установлено" : "Купить"}</span>
+          <span>${isMax ? t("actionMax") : t("crystalCount", { n: cCost })}</span>
+          <span class="buy-action">${isMax ? t("actionInstalled") : t("actionInstall")}</span>
         </button>
       `;
       cardsList.appendChild(card);
@@ -500,15 +576,15 @@ function renderCards() {
     const hero = document.createElement("div");
     hero.className = "prestige-hero";
     hero.innerHTML = `
-      <h3>Штат главных инженеров</h3>
-      <p>Наём инженеров сбрасывает текущий забег в локации, но даёт постоянный бонус <strong>+50%</strong> к доходу во всех локациях. От 2 инженеров включается авто-турбо.</p>
+      <h3>${t("prestigeTitle")}</h3>
+      <p>${t("prestigeDesc")}</p>
       <div class="prestige-stats">
-        <span>В штате: <strong>${state.engineers}</strong> (+${currentBonus}%)</span>
-        <span>Доступно: <strong>+${pending}</strong> (+${nextBonus}%)</span>
+        <span>${t("prestigeInStaff", { n: state.engineers, pct: currentBonus })}</span>
+        <span>${t("prestigePending", { n: pending, pct: nextBonus })}</span>
       </div>
       <button class="buy-btn ${pending > 0 ? "can-afford" : "cannot-afford"}" style="width:100%" data-action="prestige" ${pending <= 0 ? "disabled" : ""}>
-        <span>${pending > 0 ? `Нанять +${pending} инж.` : `Нужно ${reqCash} за забег`}</span>
-        <span class="buy-action">Сбросить и нанять</span>
+        <span>${pending > 0 ? t("prestigeBtnHire", { n: pending }) : t("prestigeBtnNeed", { cash: reqCash })}</span>
+        <span class="buy-action">${t("prestigeBtnSub")}</span>
       </button>
     `;
     cardsList.appendChild(hero);
@@ -550,15 +626,15 @@ function refreshMiningBars() {
     const fill = cardsList.querySelector(`.cycle-fill[data-cycle="${def.id}"]`);
     const mined = cardsList.querySelector(`.cycle-mined[data-mined="${def.id}"]`);
     if (fill) fill.style.width = `${Math.round((st.cycleProgress || 0) * 100)}%`;
-    if (mined) mined.textContent = `Добыто: ${formatCompact(st.totalMined || 0, "$")}`;
+    if (mined) mined.textContent = t("minedTotal", { cash: formatCompact(st.totalMined || 0, "$") });
   }
 }
 
 function renderActiveBoostersHud() {
   const pills = [];
-  if ((state.boosters?.turbo_3x || 0) > 0) pills.push(`Турбо x3 · ${Math.ceil(state.boosters.turbo_3x)}с`);
-  if ((state.boosters?.rain_2x || 0) > 0) pills.push(`Шторм x2 · ${Math.ceil(state.boosters.rain_2x)}с`);
-  if ((state.boosters?.auto_tap || 0) > 0) pills.push(`Дрон · ${Math.ceil(state.boosters.auto_tap)}с`);
+  if ((state.boosters?.turbo_3x || 0) > 0) pills.push(t("boosterTurboBadge", { s: Math.ceil(state.boosters.turbo_3x) }));
+  if ((state.boosters?.rain_2x || 0) > 0) pills.push(t("boosterRainBadge", { s: Math.ceil(state.boosters.rain_2x) }));
+  if ((state.boosters?.auto_tap || 0) > 0) pills.push(t("boosterDroneBadge", { s: Math.ceil(state.boosters.auto_tap) }));
   if (pills.length === 0) {
     activeBoostersEl.classList.add("hidden");
     activeBoostersEl.innerHTML = "";
@@ -580,20 +656,21 @@ function renderProfileModal() {
     btn.dataset.avatar = av;
     avatarPicker.appendChild(btn);
   }
-  profileNameInput.value = state.profile.name || "Гидро-Мастер";
-  profileRank.textContent = `Ранг: ${getPlayerRank(state)}`;
+  profileNameInput.value = state.profile.name || t("defaultCallsign");
+  profileRank.textContent = t("profileRankPrefix", { rank: tRank(getPlayerRank(state)) });
 
   const totals = getTotals(state);
   const mins = Math.floor((state.profile.playTimeSec || 0) / 60);
   const secs = Math.floor((state.profile.playTimeSec || 0) % 60);
+  const curZone = getActiveZone(state);
 
   profileStatsGrid.innerHTML = `
-    <div class="pstat"><div class="pstat-label">Всего заработано</div><div class="pstat-val">${formatCompact(state.lifetimeCash, "$")}</div></div>
-    <div class="pstat"><div class="pstat-label">Мощность</div><div class="pstat-val">${formatWatts(totals.totalWatts)}</div></div>
-    <div class="pstat"><div class="pstat-label">Локация</div><div class="pstat-val">${getActiveZone(state).name}</div></div>
-    <div class="pstat"><div class="pstat-label">Тапов по воде</div><div class="pstat-val">${state.profile.totalTaps || 0}</div></div>
-    <div class="pstat"><div class="pstat-label">Инженеры</div><div class="pstat-val">${state.engineers}</div></div>
-    <div class="pstat"><div class="pstat-label">Время в игре</div><div class="pstat-val">${mins}м ${secs}с</div></div>
+    <div class="pstat"><div class="pstat-label">${t("statLifetime")}</div><div class="pstat-val">${formatCompact(state.lifetimeCash, "$")}</div></div>
+    <div class="pstat"><div class="pstat-label">${t("statPower")}</div><div class="pstat-val">${formatWatts(totals.totalWatts)}</div></div>
+    <div class="pstat"><div class="pstat-label">${t("statZone")}</div><div class="pstat-val">${tZoneField(curZone, "name")}</div></div>
+    <div class="pstat"><div class="pstat-label">${t("statTaps")}</div><div class="pstat-val">${state.profile.totalTaps || 0}</div></div>
+    <div class="pstat"><div class="pstat-label">${t("statEngineers")}</div><div class="pstat-val">${state.engineers}</div></div>
+    <div class="pstat"><div class="pstat-label">${t("statTime")}</div><div class="pstat-val">${mins}${t("minUnit")} ${secs}${t("secUnit")}</div></div>
   `;
 
   achList.innerHTML = "";
@@ -603,10 +680,10 @@ function renderProfileModal() {
     row.className = `ach-item${done ? " done" : ""}`;
     row.innerHTML = `
       <div>
-        <strong>${done ? "✓ " : ""}${ach.name}</strong>
-        <div style="color:var(--text-muted);font-size:10px">${ach.desc}</div>
+        <strong>${done ? "✓ " : ""}${tAchField(ach, "name")}</strong>
+        <div style="color:var(--text-muted);font-size:10px">${tAchField(ach, "desc")}</div>
       </div>
-      <span style="font-weight:800;color:#e9d5ff">+${ach.crystals} крист.</span>
+      <span style="font-weight:800;color:#e9d5ff">+${ach.crystals} ${t("crystalsShort")}</span>
     `;
     achList.appendChild(row);
   }
@@ -616,8 +693,12 @@ function openZoneTransitionModal() {
   const nextZone = canAdvanceZone(state);
   if (!nextZone) return;
   zoneModalIcon.innerHTML = iconHtml(nextZone.icon, "svg-ic-hero");
-  zoneModalTitle.textContent = `Переход: ${nextZone.name}`;
-  zoneModalDesc.textContent = `${nextZone.desc}. Бонус: +${nextZone.rewardCrystals} кристаллов и доход x${nextZone.incomeMult}.`;
+  zoneModalTitle.textContent = t("zoneModalTitle", { name: tZoneField(nextZone, "name") });
+  zoneModalDesc.textContent = t("zoneModalDesc", {
+    desc: tZoneField(nextZone, "desc"),
+    crystals: nextZone.rewardCrystals,
+    mult: nextZone.incomeMult
+  });
   zoneModal.classList.remove("hidden");
 }
 
@@ -625,7 +706,7 @@ function updateHudAndButtons() {
   const curZone = getActiveZone(state);
   const totals = getTotals(state);
   hudCash.textContent = formatCompact(state.cash, "$");
-  hudIncome.textContent = `+${formatCompact(totals.effectiveIncomePerSec, "$")}/с`;
+  hudIncome.textContent = `+${formatCompact(totals.effectiveIncomePerSec, "$")}/${t("secUnit")}`;
   hudWatts.textContent = formatWatts(totals.totalWatts);
   hudCrystalVal.textContent = String(state.crystals || 0);
 
@@ -636,11 +717,11 @@ function updateHudAndButtons() {
   }
 
   const eraIdx = getCityEraIndex(state, totals.totalWatts);
-  hudEra.textContent = curZone.eras[eraIdx].name;
+  hudEra.textContent = tEraName(curZone, eraIdx);
   if (eraIdx > lastEraIndex) {
     lastEraIndex = eraIdx;
     sound.playUnlock();
-    showBannerToast("НОВЫЙ УРОВЕНЬ ГОРОДА", curZone.eras[eraIdx].name);
+    showBannerToast(t("toastNewEra"), tEraName(curZone, eraIdx));
   } else if (eraIdx < lastEraIndex) {
     lastEraIndex = eraIdx;
   }
@@ -652,8 +733,8 @@ function updateHudAndButtons() {
     world.triggerShake(0.18);
     spawnFlyingOrbs(window.innerWidth * 0.4, 130, crystalPillEl, "crystal", 4);
     showBannerToast(
-      `ЦЕЛЬ ВЫПОЛНЕНА · +${formatCompact(lastGoal.rewardCash, "$")}`,
-      lastGoal.title
+      t("toastGoalDone", { cash: formatCompact(lastGoal.rewardCash, "$") }),
+      tGoalField(curZone.id, lastGoal, "title")
     );
   }
 
@@ -661,7 +742,7 @@ function updateHudAndButtons() {
   if (newAchs.length > 0) {
     sound.playUnlock();
     spawnFlyingOrbs(window.innerWidth * 0.4, 150, crystalPillEl, "crystal", 4);
-    showBannerToast(`ДОСТИЖЕНИЕ · +${newAchs[0].crystals} крист.`, newAchs[0].name);
+    showBannerToast(t("toastAch", { crystals: newAchs[0].crystals }), tAchField(newAchs[0], "name"));
   }
 
   const goalInfo = getCurrentGoalProgress(state);
@@ -669,21 +750,32 @@ function updateHudAndButtons() {
 
   if (readyNext) {
     btnAdvanceZone.classList.remove("hidden");
-    btnAdvanceZone.textContent = `Перейти в «${readyNext.name}» (x${readyNext.incomeMult} · +${readyNext.rewardCrystals} крист.)`;
+    btnAdvanceZone.textContent = t("advanceZoneBtn", {
+      name: tZoneField(readyNext, "name"),
+      mult: readyNext.incomeMult,
+      crystals: readyNext.rewardCrystals
+    });
   } else {
     btnAdvanceZone.classList.add("hidden");
   }
 
   if (goalInfo.completedAll && !readyNext) {
-    goalTitle.textContent = `${curZone.name}: все этапы пройдены`;
+    goalTitle.textContent = t("goalAllDoneTitle", { zone: tZoneField(curZone, "name") });
     goalNumbers.textContent = formatWatts(goalInfo.currentWatts);
     goalFill.style.width = "100%";
-    goalSub.textContent = "Максимальный уровень энергосети достигнут";
+    goalSub.textContent = t("goalAllDoneSub");
   } else {
-    goalTitle.textContent = `ЦЕЛЬ ${goalInfo.index + 1}/${goalInfo.totalGoals}: ${goalInfo.goal.title}`;
+    goalTitle.textContent = t("goalFormat", {
+      idx: goalInfo.index + 1,
+      total: goalInfo.totalGoals,
+      title: tGoalField(curZone.id, goalInfo.goal, "title")
+    });
     goalNumbers.textContent = `${formatWatts(goalInfo.currentWatts)} / ${formatWatts(goalInfo.goal.targetWatts)}`;
     goalFill.style.width = `${goalInfo.percent.toFixed(1)}%`;
-    goalSub.textContent = `Награда: +${formatCompact(goalInfo.goal.rewardCash, "$")} · +${goalInfo.goal.rewardCrystals || 0} крист.`;
+    goalSub.textContent = t("goalReward", {
+      cash: formatCompact(goalInfo.goal.rewardCash, "$"),
+      crystals: goalInfo.goal.rewardCrystals || 0
+    });
   }
 
   renderZoneStrip();
@@ -695,7 +787,7 @@ function updateHudAndButtons() {
   const cMult = getComboMult();
   if (cMult > 1) {
     comboPill.classList.remove("hidden");
-    comboPill.textContent = `КОМБО x${cMult}`;
+    comboPill.textContent = t("comboLabel", { mult: cMult });
   } else {
     comboPill.classList.add("hidden");
   }
@@ -703,10 +795,7 @@ function updateHudAndButtons() {
   // Event alert chip
   if (world.activeEvent) {
     btnEventAlert.classList.remove("hidden");
-    btnEventAlert.textContent =
-      world.activeEvent.type === "drone"
-        ? "Дрон с кристаллами в небе — нажми!"
-        : "Золотой груз плывёт по реке — забери!";
+    btnEventAlert.textContent = world.activeEvent.type === "drone" ? t("eventDrone") : t("eventCrate");
   } else {
     btnEventAlert.classList.add("hidden");
   }
@@ -716,10 +805,10 @@ function updateHudAndButtons() {
   if (unlocks.upgrades) {
     const q = getActiveQuest(state);
     questPill.classList.remove("hidden");
-    questText.textContent = `Задание: ${q.tpl.title} (${q.progress}/${q.target})`;
+    questText.textContent = t("questPrefix", { title: tQuestTitle(q.tpl), cur: q.progress, target: q.target });
     if (q.ready) {
       btnQuestClaim.classList.remove("hidden");
-      btnQuestClaim.textContent = `Забрать +${q.rewardCrystals} крист.`;
+      btnQuestClaim.textContent = t("questClaimBtn", { crystals: q.rewardCrystals });
     } else {
       btnQuestClaim.classList.add("hidden");
     }
@@ -731,8 +820,8 @@ function updateHudAndButtons() {
   overdriveFill.style.width = `${pct}%`;
   overdriveLabel.textContent =
     state.overdrive > 0.02
-      ? `ТУРБО НАПОР x${totals.overdriveMult.toFixed(1)}`
-      : "ТАПАЙ ПО ВОДЕ ДЛЯ РАЗГОНА (x1.0)";
+      ? t("overdriveActive", { mult: totals.overdriveMult.toFixed(1) })
+      : t("overdriveIdle");
 
   renderActiveBoostersHud();
 
@@ -778,7 +867,7 @@ cardsList.addEventListener("click", (e) => {
     if (res.ok) {
       sound.playUnlock();
       if (res.cashGranted > 0) {
-        showBannerToast("ИНВЕСТИЦИИ", `+${formatCompact(res.cashGranted, "$")}`);
+        showBannerToast(t("toastInvest"), `+${formatCompact(res.cashGranted, "$")}`);
       }
       saveState(state);
       renderCards();
@@ -815,7 +904,7 @@ btnQuestClaim.addEventListener("click", () => {
     const rect = questPill.getBoundingClientRect();
     spawnFlyingOrbs(rect.right - 30, rect.top + 10, crystalPillEl, "crystal", 4);
     spawnFlyingOrbs(rect.left + 40, rect.top + 10, cashPillEl, "gold", 3);
-    showBannerToast("ЗАДАНИЕ ВЫПОЛНЕНО", `+${formatCompact(res.cash, "$")} · +${res.crystals} крист.`);
+    showBannerToast(t("toastQuestDone"), `+${formatCompact(res.cash, "$")} · +${res.crystals} ${t("crystalsShort")}`);
     saveState(state);
     updateHudAndButtons();
   }
@@ -828,7 +917,7 @@ btnConfirmZone.addEventListener("click", () => {
     lastEraIndex = 0;
     sound.playUnlock();
     world.setZoneTheme(state.activeZoneId);
-    showBannerToast(`НОВАЯ ЛОКАЦИЯ x${nextZone.incomeMult}`, nextZone.name);
+    showBannerToast(t("toastNewZone", { mult: nextZone.incomeMult }), tZoneField(nextZone, "name"));
     saveState(state);
     renderCards();
     updateHudAndButtons();
@@ -851,7 +940,7 @@ document.querySelector(".cam-bar").addEventListener("click", (e) => {
     world.setPanEnabled(next);
     btnPanToggle.classList.toggle("active", next);
     btnPanToggle.setAttribute("aria-pressed", String(next));
-    btnPanToggle.textContent = next ? "Сдвиг: ВКЛ" : "Сдвиг: ВЫКЛ";
+    btnPanToggle.textContent = t(next ? "panOn" : "panOff");
   }
 });
 
@@ -911,7 +1000,7 @@ btnResetConfirm.addEventListener("click", () => {
   world.setCameraPreset(0);
   renderCards();
   updateHudAndButtons();
-  showBannerToast("НОВАЯ ИГРА", "Прогресс полностью сброшен");
+  showBannerToast(t("toastResetTitle"), t("toastResetSub"));
 });
 avatarPicker.addEventListener("click", (e) => {
   const opt = e.target.closest(".avatar-opt");
@@ -921,8 +1010,27 @@ avatarPicker.addEventListener("click", (e) => {
   saveState(state);
 });
 profileNameInput.addEventListener("input", () => {
-  state.profile.name = profileNameInput.value.trim() || "Гидро-Мастер";
+  state.profile.name = profileNameInput.value.trim() || t("defaultCallsign");
 });
+
+if (btnLang) {
+  btnLang.addEventListener("click", () => {
+    setLang(getLang() === "ru" ? "en" : "ru");
+    applyStaticTranslations();
+    renderCards();
+    updateHudAndButtons();
+  });
+}
+
+if (btnFullscreen) {
+  btnFullscreen.addEventListener("click", () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen?.().catch(() => {});
+    } else {
+      document.exitFullscreen?.().catch(() => {});
+    }
+  });
+}
 
 btnSound.addEventListener("click", () => {
   userMuted = !userMuted;
@@ -967,7 +1075,7 @@ btnClaimOffline.addEventListener("click", () => {
 
 if (offlineEarned > 0) {
   const mins = Math.max(1, Math.floor(offlineSeconds / 60));
-  offlineTime.textContent = `Вы отсутствовали ${mins} мин.`;
+  offlineTime.textContent = t("offlineAway", { mins });
   offlineReward.textContent = `+${formatCompact(offlineEarned, "$")}`;
   offlineModal.classList.remove("hidden");
 }
@@ -1027,6 +1135,7 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 
+applyStaticTranslations();
 renderCards();
 updateHudAndButtons();
 requestAnimationFrame(frame);
@@ -1034,6 +1143,12 @@ requestAnimationFrame(frame);
 window.__WATER_POWER_DEBUG__ = {
   state,
   world,
+  setLang: (lang) => {
+    setLang(lang);
+    applyStaticTranslations();
+    renderCards();
+    updateHudAndButtons();
+  },
   refreshHud: updateHudAndButtons,
   getTotals: () => getTotals(state),
   grantCash: (amt) => {

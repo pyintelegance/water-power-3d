@@ -46,6 +46,7 @@ export class WaterPowerWorld {
 
     // Camera preset + optional hand-panning & wheel zoom state (no rotation)
     this.panEnabled = false;
+    this.isPortrait = false;
     this.panOffset = new THREE.Vector3(0, 0, 0);
     this.zoomScale = 1.0;
     this.desiredZoomScale = 1.0;
@@ -58,6 +59,8 @@ export class WaterPowerWorld {
     this.currentZoneId = "valley";
 
     this.stationNodes = {};
+    this.dockBuoys = [];
+    this.haloRings = [];
     this.eraGroups = [];
     this.eraScales = [1, 0.001, 0.001, 0.001, 0.001];
     this.activeEra = 0;
@@ -223,23 +226,31 @@ export class WaterPowerWorld {
     const sandMat = this.sandMat;
 
     // Base valley slab (expanded for 16:9 PC widescreen)
-    addBox(this.scene, 72, 3, 64, 2, -1.7, 0, flatMat("#1e293b", 0.95), false);
+    addBox(this.scene, 76, 3, 68, 2, -1.7, 0, flatMat("#1e293b", 0.95), false);
 
-    // Right green plateau (City side)
-    addBox(this.scene, 30, 1.2, 46, 15.5, -0.2, 0, grassMat, true);
-    // Left hilly canyon bank
-    addBox(this.scene, 26, 1.8, 46, -16.5, 0.1, 0, darkGrassMat, true);
+    // Right green plateau (City side) + terraced grass step
+    addBox(this.scene, 32, 1.2, 48, 16.5, -0.2, 0, grassMat, true);
+    addBox(this.scene, 4.2, 0.5, 29, 4.0, 0.15, 2.5, darkGrassMat, true);
+    // Left hilly canyon bank + terraced cliffs
+    addBox(this.scene, 28, 1.8, 48, -17.5, 0.1, 0, darkGrassMat, true);
     addBox(this.scene, 18, 3.6, 22, -15.0, 1.4, -7, rockMat, true);
+    addBox(this.scene, 12, 2.8, 14, -13.5, 3.4, -12, cliffMat, true);
 
-    // Upper Reservoir Plateau (North / -Z)
-    addBox(this.scene, 56, 4.4, 18, 0, 1.6, -18, cliffMat, true);
-    addBox(this.scene, 22, 0.4, 18, 14.5, 3.85, -18, darkGrassMat, true);
-    addBox(this.scene, 22, 0.4, 18, -15.5, 3.85, -18, rockMat, true);
+    // Upper Reservoir Plateau (North / -Z) & sculpted waterfall gorge
+    addBox(this.scene, 58, 4.4, 18, 0, 1.6, -18, cliffMat, true);
+    addBox(this.scene, 22, 0.45, 18, 14.5, 3.85, -18, darkGrassMat, true);
+    addBox(this.scene, 22, 0.45, 18, -15.5, 3.85, -18, rockMat, true);
+    addBox(this.scene, 2.4, 3.6, 2.2, -5.2, 1.8, -9.2, rockMat, true);
+    addBox(this.scene, 2.4, 3.6, 2.2, 2.8, 1.8, -9.2, rockMat, true);
 
-    // Riverbed sand banks & engineered stone retaining walls
-    addBox(this.scene, 6.2, 0.35, 25, -1.2, -0.35, 3, sandMat, false);
-    addBox(this.scene, 0.45, 0.95, 24.5, -4.15, 0.15, 3.2, cliffMat, true);
-    addBox(this.scene, 0.45, 0.95, 24.5, 1.75, 0.15, 3.2, cliffMat, true);
+    // Riverbed sand banks & engineered stone retaining walls with buttresses
+    addBox(this.scene, 6.4, 0.35, 26, -1.2, -0.35, 3, sandMat, false);
+    addBox(this.scene, 0.55, 0.95, 25.5, -4.2, 0.15, 3.2, cliffMat, true);
+    addBox(this.scene, 0.55, 0.95, 25.5, 1.8, 0.15, 3.2, cliffMat, true);
+    for (let bz = -7; bz <= 13; bz += 4) {
+      addBox(this.scene, 0.85, 0.82, 0.7, -4.45, 0.1, bz, rockMat, true);
+      addBox(this.scene, 0.85, 0.82, 0.7, 2.05, 0.1, bz, rockMat, true);
+    }
 
     // Stepped canyon rock ledges on left cliff
     addBox(this.scene, 8.5, 1.1, 14, -7.8, 1.25, -13.5, rockMat, true);
@@ -257,7 +268,7 @@ export class WaterPowerWorld {
 
     const upperWater = new THREE.Mesh(new THREE.PlaneGeometry(5.2, 11, 8, 10), this.waterMat);
     upperWater.rotation.x = -Math.PI / 2;
-    upperWater.position.set(-1.2, 3.82, -14.5);
+    upperWater.position.set(-1.2, 3.94, -14.5);
     upperWater.receiveShadow = true;
     this.scene.add(upperWater);
 
@@ -355,12 +366,68 @@ export class WaterPowerWorld {
     addBox(bridge, 7.6, 0.35, 0.14, 0, 1.48, 0.86, rail);
     addBox(bridge, 7.6, 0.35, 0.14, 0, 1.48, -0.86, rail);
 
-    // Bridge lanterns
+    // Bridge lanterns & arched suspension pylons
     for (const lx of [-2.6, 2.6]) {
       addCyl(bridge, 0.06, 0.08, 1.1, 6, lx, 1.85, 0.86, rail);
       addBox(bridge, 0.22, 0.24, 0.22, lx, 2.45, 0.86, lampGlow, false);
     }
+    addBox(bridge, 0.22, 1.4, 0.22, -1.8, 2.0, -0.86, rail);
+    addBox(bridge, 0.22, 1.4, 0.22, 1.8, 2.0, -0.86, rail);
+    addBox(bridge, 3.8, 0.14, 0.14, 0, 2.68, -0.86, rail);
     this.scene.add(bridge);
+  }
+
+  buildStationDock(slot, m) {
+    const pad = new THREE.Group();
+    const deckMat = flatMat("#475569", 0.78, 0.2);
+    const buoyMat = flatMat("#f97316", 0.35, 0.15, { emissive: "#ea580c", emissiveIntensity: 0.45 });
+    const pylonCorners = [[-1.65, -1.15], [1.65, -1.15], [-1.65, 1.15], [1.65, 1.15]];
+    for (const [px, pz] of pylonCorners) {
+      addCyl(pad, 0.11, 0.13, 0.75, 6, px, 0.12, pz, m.wood);
+      const buoy = new THREE.Mesh(new THREE.OctahedronGeometry(0.16, 0), buoyMat);
+      buoy.position.set(px, 0.58, pz);
+      pad.add(buoy);
+      this.dockBuoys.push({ mesh: buoy, baseY: 0.58, phase: px + pz });
+    }
+    addBox(pad, 3.2, 0.1, 0.22, 0, 0.18, -1.12, deckMat, false);
+    addBox(pad, 3.2, 0.1, 0.22, 0, 0.18, 1.12, deckMat, false);
+    slot.add(pad);
+    return pad;
+  }
+
+  addStationTiers(model, m) {
+    // Tier 10: twin copper capacitor tanks + golden trim collar
+    const tier10 = new THREE.Group();
+    tier10.visible = false;
+    addCyl(tier10, 0.24, 0.26, 0.85, 8, 2.05, 1.25, -0.52, m.copper);
+    addCyl(tier10, 0.24, 0.26, 0.85, 8, 2.05, 1.25, 0.52, m.copper);
+    addBox(tier10, 0.65, 0.16, 1.25, 2.05, 1.7, 0, m.accent, false);
+    model.add(tier10);
+
+    // Tier 25: steel gantry frame + twin glowing spotlights
+    const tier25 = new THREE.Group();
+    tier25.visible = false;
+    addBox(tier25, 0.18, 2.65, 0.18, -1.85, 1.32, 0.82, m.metal);
+    addBox(tier25, 0.18, 2.65, 0.18, 1.85, 1.32, 0.82, m.metal);
+    addBox(tier25, 3.9, 0.18, 0.18, 0, 2.65, 0.82, m.metal);
+    addBox(tier25, 0.34, 0.22, 0.28, -1.1, 2.68, 0.9, m.coreGlow, false);
+    addBox(tier25, 0.34, 0.22, 0.28, 1.1, 2.68, 0.9, m.coreGlow, false);
+    model.add(tier25);
+
+    // Tier 50: rotating high-voltage energy crown above station
+    const tier50 = new THREE.Group();
+    tier50.visible = false;
+    const halo = new THREE.Mesh(new THREE.TorusGeometry(0.95, 0.08, 6, 18), m.coreGlow);
+    halo.position.set(0, 3.2, 0);
+    halo.rotation.x = Math.PI / 2;
+    tier50.add(halo);
+    this.haloRings.push(halo);
+    const crystalCap = new THREE.Mesh(new THREE.OctahedronGeometry(0.28, 0), m.glow);
+    crystalCap.position.set(0, 3.25, 0);
+    tier50.add(crystalCap);
+    model.add(tier50);
+
+    return { tier10, tier25, tier50 };
   }
 
   createWheelMesh(blades, radius, width, rimMat, bladeMat) {
@@ -395,13 +462,6 @@ export class WaterPowerWorld {
     const zPositions = [6.2, 2.8, -0.5, -3.8, -7.2, -11.5];
     const yPositions = [0.2, 0.2, 0.2, 0.2, 0.2, 4.0];
 
-    const blueprintMat = new THREE.MeshBasicMaterial({
-      color: "#38bdf8",
-      wireframe: true,
-      transparent: true,
-      opacity: 0.35
-    });
-
     const m = this.stationMats;
 
     getZoneStations("valley").forEach((def, idx) => {
@@ -410,9 +470,7 @@ export class WaterPowerWorld {
       const slot = new THREE.Group();
       slot.position.set(-1.2, y, z);
 
-      const pad = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.25, 2.4), blueprintMat);
-      pad.position.set(0, 0.1, 0);
-      slot.add(pad);
+      const pad = this.buildStationDock(slot, m);
 
       const model = new THREE.Group();
       model.visible = false;
@@ -474,12 +532,14 @@ export class WaterPowerWorld {
         extraSpinner = ring;
       }
 
+      const tiers = this.addStationTiers(model, m);
       slot.add(model);
       this.scene.add(slot);
       this.stationNodes[def.id] = {
         slot,
         pad,
         model,
+        tiers,
         spinner,
         extraSpinner,
         scaleAnim: 0.01,
@@ -514,13 +574,21 @@ export class WaterPowerWorld {
       addBox(this.glacierProps, 1.3, 0.22, 1.1, ix, iy, iz, iceMat, false);
     }
 
-    // Geothermal warm beacon towers on right bank
+    // Geothermal warm beacon towers on right bank + crystal ice spires
     addCyl(this.glacierProps, 0.45, 0.6, 2.8, 8, 5.5, 1.4, -7.2, flatMat("#475569"));
     addCyl(this.glacierProps, 0.5, 0.5, 0.35, 8, 5.5, 2.9, -7.2, warmOrange, false);
+    addCyl(this.glacierProps, 0.35, 0.48, 2.1, 8, 5.5, 1.05, 6.2, flatMat("#475569"));
+    addCyl(this.glacierProps, 0.38, 0.38, 0.28, 8, 5.5, 2.2, 6.2, warmOrange, false);
+    for (const [cx, cz] of [[-5.6, 5.0], [3.6, -3.5], [13.5, 6.5]]) {
+      const spire = new THREE.Mesh(new THREE.OctahedronGeometry(0.65, 0), iceMat);
+      spire.position.set(cx, 1.1, cz);
+      spire.scale.set(0.7, 1.9, 0.7);
+      this.glacierProps.add(spire);
+    }
     this.glacierProps.visible = false;
     this.scene.add(this.glacierProps);
 
-    // Location 3: Cyber Neon Arches over river & holographic rings
+    // Location 3: Cyber Neon Arches over river, canal neon strips & holo pylons
     this.cyberProps = new THREE.Group();
     const darkArch = flatMat("#0f172a", 0.3, 0.8);
     const neonMagenta = flatMat("#f472b6", 0.15, 0.2, { emissive: "#ec4899", emissiveIntensity: 1.4 });
@@ -531,6 +599,14 @@ export class WaterPowerWorld {
       addBox(this.cyberProps, 0.45, 4.6, 0.45, 1.8, 2.3, az, darkArch);
       addBox(this.cyberProps, 6.4, 0.45, 0.45, -1.2, 4.6, az, darkArch);
       addBox(this.cyberProps, 5.6, 0.16, 0.16, -1.2, 4.35, az, az === 0.8 ? neonMagenta : neonCyan, false);
+    }
+
+    // Glowing cyber canal edge rails + city holo-pylons
+    addBox(this.cyberProps, 0.12, 0.14, 25.0, -4.05, 0.72, 3.2, neonCyan, false);
+    addBox(this.cyberProps, 0.12, 0.14, 25.0, 1.65, 0.72, 3.2, neonMagenta, false);
+    for (const [px, pz, mat] of [[6.2, 7.6, neonCyan], [6.2, -7.8, neonMagenta], [14.6, 4.5, neonCyan]]) {
+      addBox(this.cyberProps, 0.35, 3.8, 0.35, px, 2.1, pz, darkArch);
+      addBox(this.cyberProps, 0.42, 0.8, 0.42, px, 4.2, pz, mat, false);
     }
 
     const skyRing = new THREE.Mesh(new THREE.TorusGeometry(3.2, 0.12, 6, 28), neonMagenta);
@@ -599,10 +675,17 @@ export class WaterPowerWorld {
     const windowGlow = flatMat("#fde047", 0.2, 0.1, { emissive: "#facc15", emissiveIntensity: 0.85 });
     const neonCyan = flatMat("#67e8f9", 0.1, 0.2, { emissive: "#22d3ee", emissiveIntensity: 1.2 });
 
-    // Era 0: Camp & Shack + Avenue & Streetlight
+    // Era 0: Camp & Shack + Paved Avenue & Dashed Centerline + Streetlight
     const era0 = new THREE.Group();
     const roadMat = flatMat("#334155", 0.9);
-    addBox(era0, 1.6, 0.08, 17.5, -1.8, 0.04, 0, roadMat, false);
+    const curbMat = flatMat("#94a3b8", 0.85);
+    const stripeMat = flatMat("#f8fafc", 0.7);
+    addBox(era0, 1.8, 0.08, 18.2, -1.8, 0.04, 0, roadMat, false);
+    addBox(era0, 0.14, 0.11, 18.2, -2.75, 0.055, 0, curbMat, false);
+    addBox(era0, 0.14, 0.11, 18.2, -0.85, 0.055, 0, curbMat, false);
+    for (let dz = -7.5; dz <= 7.5; dz += 2.2) {
+      addBox(era0, 0.1, 0.09, 0.9, -1.8, 0.048, dz, stripeMat, false);
+    }
     const tent = new THREE.Mesh(new THREE.ConeGeometry(0.95, 1.15, 4), flatMat("#f97316"));
     tent.position.set(-0.1, 0.58, 4.4);
     tent.rotation.y = Math.PI / 4;
@@ -959,7 +1042,13 @@ export class WaterPowerWorld {
   updateDesiredCamera() {
     const preset = CAMERA_PRESETS[this.presetIndex];
     const baseTarget = preset.target.clone().add(this.panOffset);
-    const offset = preset.pos.clone().sub(preset.target).multiplyScalar(this.desiredZoomScale);
+    let scale = this.desiredZoomScale;
+    if (this.isPortrait && this.presetIndex === 0) {
+      baseTarget.x -= 1.55;
+      baseTarget.y -= 0.35;
+      scale *= 1.2;
+    }
+    const offset = preset.pos.clone().sub(preset.target).multiplyScalar(scale);
     this.desiredTarget.copy(baseTarget);
     this.desiredCameraPos.copy(baseTarget).add(offset);
   }
@@ -1045,6 +1134,13 @@ export class WaterPowerWorld {
         if (hit.length > 0) {
           this.spawnSplash(hit[0].point.x, hit[0].point.y + 0.2, hit[0].point.z, 10);
         } else {
+          for (const [sid, node] of Object.entries(this.stationNodes)) {
+            if (node.model.visible && raycaster.intersectObject(node.model, true).length > 0) {
+              this.triggerStationPulse(sid);
+              this.spawnSplash(node.slot.position.x, node.slot.position.y + 1.0, node.slot.position.z, 10);
+              break;
+            }
+          }
           this.spawnSplash(-1.2, 0.5, 2.0, 8);
         }
         if (this.onTapWorld) {
@@ -1087,10 +1183,15 @@ export class WaterPowerWorld {
     const height = parent ? parent.clientHeight : window.innerHeight;
     if (width <= 0 || height <= 0) return;
     const aspect = width / height;
-    this.camera.fov = aspect < 0.8 ? 48 : 42;
+    const nextPortrait = aspect < 0.85;
+    this.camera.fov = nextPortrait ? 52 : 42;
     this.camera.aspect = aspect;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height, false);
+    if (nextPortrait !== this.isPortrait) {
+      this.isPortrait = nextPortrait;
+      this.updateDesiredCamera();
+    }
   }
 
   render(state) {
@@ -1160,6 +1261,11 @@ export class WaterPowerWorld {
       if (st.unlocked) {
         node.pad.visible = false;
         node.model.visible = true;
+        if (node.tiers) {
+          node.tiers.tier10.visible = st.level >= 10;
+          node.tiers.tier25.visible = st.level >= 25;
+          node.tiers.tier50.visible = st.level >= 50;
+        }
         node.scaleAnim = Math.min(1, node.scaleAnim + dt * 3.5);
         node.pulseBoost = Math.max(0, (node.pulseBoost || 0) - dt * 2.8);
         const s = (1 - Math.pow(1 - node.scaleAnim, 3)) * (1 + node.pulseBoost * 0.12);
@@ -1300,6 +1406,17 @@ export class WaterPowerWorld {
     for (const c of this.clouds) {
       c.grp.position.x += c.speed * dt;
       if (c.grp.position.x > 34) c.grp.position.x = -34;
+    }
+    for (const b of this.dockBuoys) {
+      if (b.mesh.parent?.visible) {
+        b.mesh.position.y = b.baseY + Math.sin(t * 2.8 + b.phase) * 0.08;
+        b.mesh.rotation.y += dt * 1.1;
+      }
+    }
+    for (const ring of this.haloRings) {
+      if (ring.parent?.visible) {
+        ring.rotation.z += dt * 1.6;
+      }
     }
 
     // Active 3D River / Drone Events

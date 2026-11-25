@@ -61,6 +61,34 @@ def main():
             page.wait_for_timeout(200)
             assert page.evaluate("window.__WATER_POWER_DEBUG__.state.crystals") > crystals_after
 
+            # 3. Verify EN/RU language switcher + 3D station evolution tiers + mobile portrait view
+            page.locator("#btn-lang").click()
+            page.wait_for_timeout(150)
+            lang_text = page.locator("#btn-lang").inner_text().strip()
+            assert lang_text in ("EN", "RU"), f"Unexpected lang toggle label: {lang_text}"
+            # Switch explicitly to EN and verify desktop station tier visuals at lvl 55
+            page.evaluate("""() => {
+                window.__WATER_POWER_DEBUG__.setLang('en');
+                window.__WATER_POWER_DEBUG__.state.stations.s0.level = 55;
+                window.__WATER_POWER_DEBUG__.grantCash(50000);
+            }""")
+            page.wait_for_timeout(250)
+            tab_txt = page.locator(".tab-btn[data-tab='stations']").inner_text().strip()
+            assert tab_txt == "Stations", f"Expected Stations in EN, got {tab_txt}"
+            tier50_vis = page.evaluate("window.__WATER_POWER_DEBUG__.world.stationNodes.s0.tiers.tier50.visible")
+            assert tier50_vis is True, "Tier 50 3D upgrade mesh did not activate at level 55"
+            page.screenshot(path=os.path.join(SHOTS_DIR, "desktop_en_tier50.png"))
+
+            # 4. Mobile portrait viewport (390x844) framing & HUD check
+            m_page = browser.new_page(viewport={"width": 390, "height": 844}, device_scale_factor=2)
+            m_page.on("pageerror", lambda err: errors.append(f"MOBILE_PAGEERROR: {err}"))
+            m_page.on("console", lambda m: errors.append(f"MOBILE_CONSOLE_ERROR: {m.text}") if m.type == "error" else None)
+            m_page.goto("http://127.0.0.1:4188/", wait_until="networkidle")
+            m_page.wait_for_timeout(800)
+            m_page.evaluate("window.__WATER_POWER_DEBUG__.setLang('ru')")
+            m_page.wait_for_timeout(250)
+            m_page.screenshot(path=os.path.join(SHOTS_DIR, "mobile_visual_v7.png"))
+
             browser.close()
     finally:
         server.terminate()

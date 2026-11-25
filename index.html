@@ -7,6 +7,7 @@
     content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
   />
   <meta name="theme-color" content="#0b1d2e" />
+  <meta name="description" content="Water Power 3D — build hydro dams, trigger turbo water surges, and power an evolving low-poly city across Green Valley, Snowy Peaks, and Neon Canyon." />
   <link
     rel="icon"
     href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💧</text></svg>"
@@ -43,8 +44,10 @@
         <span id="hud-crystal-val">5</span>
       </div>
 
+      <button class="lang-btn" id="btn-lang" title="RU / EN" aria-label="Language">RU</button>
       <button class="icon-btn" id="btn-profile" title="Профиль" aria-label="Профиль"></button>
       <button class="icon-btn" id="btn-sound" title="Звук" aria-label="Звук"></button>
+      <button class="icon-btn hide-xs-fs" id="btn-fullscreen" title="На весь экран" aria-label="На весь экран"></button>
     </header>
 
     <!-- Collapsible Grand Goal + Zone Bar -->
@@ -102,7 +105,7 @@
     </div>
 
     <!-- Desktop Controls Hint (visible >= 1024px) -->
-    <div class="pc-hints" aria-hidden="true">
+    <div class="pc-hints" id="pc-hints" aria-hidden="true">
       <span>Пробел — импульс</span> · <span>WASD — камера</span> · <span>Колёсико — зум</span> · <span>1–4 — вкладки</span>
     </div>
 
@@ -130,7 +133,7 @@
     <div class="modal-backdrop hidden" id="profile-modal">
       <div class="modal-card profile-card">
         <div class="modal-head-row">
-          <h2>Профиль энергетика</h2>
+          <h2 id="profile-modal-title">Профиль энергетика</h2>
           <button class="mini-close-btn" id="btn-close-profile">✕</button>
         </div>
 
@@ -148,13 +151,13 @@
 
         <div class="profile-stats-grid" id="profile-stats-grid"></div>
 
-        <h3 class="ach-heading">Достижения</h3>
+        <h3 class="ach-heading" id="ach-heading">Достижения</h3>
         <div class="ach-list" id="ach-list"></div>
 
         <div class="reset-section">
           <button class="danger-outline-btn" id="btn-reset-prompt">Сбросить прогресс (Reset)</button>
           <div class="reset-confirm-box hidden" id="reset-confirm-box">
-            <div>Точно сбросить весь прогресс, локации и постройки?</div>
+            <div id="reset-confirm-text">Точно сбросить весь прогресс, локации и постройки?</div>
             <div class="modal-actions-row">
               <button class="secondary-btn" id="btn-reset-cancel">Отмена</button>
               <button class="danger-btn" id="btn-reset-confirm">Да, сбросить</button>
@@ -170,7 +173,7 @@
         <div class="modal-icon-hero" id="zone-modal-icon"></div>
         <h2 id="zone-modal-title">Переход в новую локацию</h2>
         <p class="modal-desc" id="zone-modal-desc"></p>
-        <div class="zone-reset-box">
+        <div class="zone-reset-box" id="zone-reset-box">
           <div>• Деньги, станции и локальные апгрейды стартуют заново</div>
           <div>• Откроются <strong>6 новых станций</strong> и <strong>4 новых улучшения</strong></div>
           <div>• Кристаллы, инженеры, магазин и профиль сохраняются + бонус</div>
@@ -186,7 +189,7 @@
     <div class="modal-backdrop hidden" id="offline-modal">
       <div class="modal-card">
         <div class="modal-icon-hero" id="offline-icon"></div>
-        <h2>Станция работала автономно</h2>
+        <h2 id="offline-title">Станция работала автономно</h2>
         <p class="modal-desc" id="offline-time">Прошло 0 мин</p>
         <div class="modal-reward" id="offline-reward">+$0</div>
         <button class="primary-btn" id="btn-claim-offline">Забрать доход</button>
