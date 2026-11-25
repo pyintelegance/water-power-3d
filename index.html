@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+  />
+  <meta name="theme-color" content="#0b1d2e" />
+  <link
+    rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💧</text></svg>"
+  />
+  <title>Water Power 3D — Hydro Tycoon</title>
+</head>
+<body>
+  <div id="app">
+    <div id="canvas-wrap">
+      <canvas id="game-canvas"></canvas>
+      <div id="tap-fx-layer" aria-hidden="true"></div>
+    </div>
+
+    <!-- Top HUD -->
+    <header class="top-hud">
+      <div class="stat-pill cash-pill">
+        <span class="stat-icon">💧</span>
+        <div class="stat-text">
+          <div class="stat-main" id="hud-cash">$0</div>
+          <div class="stat-sub" id="hud-income">+$0/с</div>
+        </div>
+      </div>
+
+      <div class="stat-pill power-pill">
+        <span class="stat-icon">⚡</span>
+        <div class="stat-text">
+          <div class="stat-main" id="hud-watts">0 W</div>
+          <div class="stat-sub" id="hud-era">Лагерь у ручья</div>
+        </div>
+      </div>
+
+      <div class="hud-actions">
+        <button class="icon-btn" id="btn-cam" title="Сменить камеру" aria-label="Сменить камеру">🎥</button>
+        <button class="icon-btn" id="btn-sound" title="Звук" aria-label="Звук">🔊</button>
+      </div>
+    </header>
+
+    <!-- Overdrive / Tap Meter -->
+    <div class="overdrive-wrap">
+      <div class="overdrive-bar">
+        <div class="overdrive-fill" id="overdrive-fill"></div>
+        <span class="overdrive-label" id="overdrive-label">⚡ НАЖМИ НА ВОДУ ДЛЯ УСКОРЕНИЯ (x1.0)</span>
+      </div>
+    </div>
+
+    <!-- City Evolution Toast -->
+    <div class="era-toast hidden" id="era-toast">
+      <span class="era-toast-badge">НОВАЯ ЭРА ГОРОДА!</span>
+      <strong id="era-toast-title">Деревня у воды</strong>
+    </div>
+
+    <!-- Bottom Interactive Drawer -->
+    <section class="drawer" id="drawer">
+      <div class="drawer-header">
+        <div class="tabs" role="tablist">
+          <button class="tab-btn active" data-tab="stations" role="tab">⚙️ Станции</button>
+          <button class="tab-btn" data-tab="upgrades" role="tab">🌊 Апгрейды</button>
+          <button class="tab-btn" data-tab="prestige" role="tab">👷 Инженеры</button>
+        </div>
+        <div class="drawer-controls">
+          <button class="mult-btn" id="btn-buy-mult">x1</button>
+          <button class="collapse-btn" id="btn-collapse" title="Свернуть панель">▾</button>
+        </div>
+      </div>
+
+      <div class="drawer-body" id="drawer-body">
+        <div class="cards-list" id="cards-list"></div>
+      </div>
+    </section>
+
+    <!-- Offline Income Modal -->
+    <div class="modal-backdrop hidden" id="offline-modal">
+      <div class="modal-card">
+        <div class="modal-emoji">🌊⚡</div>
+        <h2>Станция работала без вас!</h2>
+        <p class="modal-desc" id="offline-time">Прошло 0 мин</p>
+        <div class="modal-reward" id="offline-reward">+$0</div>
+        <button class="primary-btn" id="btn-claim-offline">Забрать прибыль</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

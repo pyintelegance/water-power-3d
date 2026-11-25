@@ -1,0 +1,20 @@
+{
+  "name": "water-power-game",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "3D Low-Poly Hydroelectric Idle Tycoon game inspired by Water Power",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "cap:sync": "vite build && npx cap sync android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.6.2",
+    "@capacitor/cli": "^8.6.2",
+    "@capacitor/core": "^8.6.2",
+    "three": "^0.187.0",
+    "vite": "^8.3.8"
+  }
+}

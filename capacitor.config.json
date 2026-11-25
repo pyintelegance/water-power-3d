@@ -1,0 +1,9 @@
+{
+  "appId": "com.antigravity.waterpower",
+  "appName": "Water Power 3D",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "android": {
+    "backgroundColor": "#0c1b2a"
+  }
+}
