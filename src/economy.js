@@ -1,4 +1,37 @@
-export const SAVE_KEY = "water_power_3d_save_v2";
+export const SAVE_KEY = "water_power_3d_save_v3";
+
+export const ZONES = [
+  {
+    id: "valley",
+    index: 0,
+    name: "Зелёная долина",
+    icon: "🌿",
+    unlockWatts: 0,
+    incomeMult: 1,
+    rewardCrystals: 0,
+    desc: "Стартовый каньон и растущий эко-город"
+  },
+  {
+    id: "glacier",
+    index: 1,
+    name: "Снежные вершины",
+    icon: "❄️",
+    unlockWatts: 1800000,
+    incomeMult: 6,
+    rewardCrystals: 25,
+    desc: "Ледниковая река высокой плотности (доход x6)"
+  },
+  {
+    id: "cyber",
+    index: 2,
+    name: "Неоновый каньон",
+    icon: "🌃",
+    unlockWatts: 30000000,
+    incomeMult: 36,
+    rewardCrystals: 60,
+    desc: "Ночная мега-энергосеть будущего (доход x36)"
+  }
+];
 
 export const STATION_DEFS = [
   {
@@ -114,6 +147,71 @@ export const UPGRADE_DEFS = [
   }
 ];
 
+export const BOOSTER_DEFS = [
+  {
+    id: "turbo_3x",
+    name: "Турбо-поток x3",
+    icon: "🚀",
+    desc: "Утроение дохода от всех ГЭС на 30 сек",
+    durationSec: 30,
+    crystalCost: 4
+  },
+  {
+    id: "rain_2x",
+    name: "Ливень x2",
+    icon: "🌧️",
+    desc: "Штормовой дождь: скорость и добыча x2 на 60 сек",
+    durationSec: 60,
+    crystalCost: 3
+  },
+  {
+    id: "auto_tap",
+    name: "Дрон-кликер",
+    icon: "🤖",
+    desc: "Автоматически кликает по воде 3 раза/сек (45 сек)",
+    durationSec: 45,
+    crystalCost: 3
+  },
+  {
+    id: "cash_pack",
+    name: "Мешок инвестиций",
+    icon: "💰",
+    desc: "Мгновенно даёт +120 сек текущего дохода (мин. $500)",
+    durationSec: 0,
+    crystalCost: 5
+  }
+];
+
+export const SHOP_PERK_DEFS = [
+  {
+    id: "gold_blades",
+    name: "Титановые лопасти",
+    icon: "🛠️",
+    desc: "+50% к доходу всех станций навсегда",
+    baseCrystalCost: 6,
+    costStep: 5,
+    maxLevel: 10
+  },
+  {
+    id: "crystal_battery",
+    name: "Кристальная батарея",
+    icon: "🔋",
+    desc: "+25% к мощности (Ватт) для быстрого открытия зон",
+    baseCrystalCost: 8,
+    costStep: 6,
+    maxLevel: 10
+  },
+  {
+    id: "offline_amp",
+    name: "Офлайн-реактор",
+    icon: "🌙",
+    desc: "+25% к доходу, пока игра закрыта",
+    baseCrystalCost: 7,
+    costStep: 7,
+    maxLevel: 4
+  }
+];
+
 export const CITY_ERAS = [
   { minWatts: 0, name: "Лагерь у ручья" },
   { minWatts: 120, name: "Деревня у воды" },
@@ -126,41 +224,66 @@ export const GRAND_GOALS = [
   {
     id: "goal_village",
     title: "Зажечь свет в деревне",
-    subtitle: "Выйдите на мощность 120 W — вырастут первые дома",
+    subtitle: "Выйдите на 120 W — вырастут первые дома",
     targetWatts: 120,
-    rewardCash: 95
+    rewardCash: 95,
+    rewardCrystals: 3
   },
   {
     id: "goal_town",
     title: "Запустить рабочий посёлок",
     subtitle: "Достигните 3.0 kW — появятся мастерские и кварталы",
     targetWatts: 3000,
-    rewardCash: 2200
+    rewardCash: 2200,
+    rewardCrystals: 5
   },
   {
     id: "goal_ecocity",
     title: "Запитать Эко-город",
     subtitle: "Достигните 75 kW — построятся стеклянные высотки",
     targetWatts: 75000,
-    rewardCash: 55000
+    rewardCash: 55000,
+    rewardCrystals: 8
   },
   {
-    id: "goal_metropolis",
-    title: "Построить Зелёный мегаполис",
-    subtitle: "Достигните 1.8 MW — город будущего на чистой воде!",
+    id: "goal_zone2",
+    title: "Открыть Зону 2: Снежные вершины",
+    subtitle: "Достигните 1.8 MW — постройте Мегаполис и откройте новую зону!",
     targetWatts: 1800000,
-    rewardCash: 1500000
+    rewardCash: 1500000,
+    rewardCrystals: 15,
+    unlocksZoneId: "glacier"
+  },
+  {
+    id: "goal_zone3",
+    title: "Открыть Зону 3: Неоновый каньон",
+    subtitle: "Достигните 30 MW — откройте ночную кибер-зону (доход x36)!",
+    targetWatts: 30000000,
+    rewardCash: 35000000,
+    rewardCrystals: 30,
+    unlocksZoneId: "cyber"
   },
   {
     id: "goal_empire",
-    title: "Гидро-Империя 10 MW",
-    subtitle: "Финальная цель: абсолютная энергетическая мощь",
-    targetWatts: 10000000,
-    rewardCash: 25000000
+    title: "Абсолютная Гидро-Империя 250 MW",
+    subtitle: "Финальная вершина чистой энергии",
+    targetWatts: 250000000,
+    rewardCash: 500000000,
+    rewardCrystals: 50
   }
 ];
 
-export function createInitialState(engineers = 0) {
+export const ACHIEVEMENT_DEFS = [
+  { id: "ach_tap_25", name: "Первые брызги", desc: "Тапнуть по воде 25 раз", check: (s) => s.profile.totalTaps >= 25, crystals: 3 },
+  { id: "ach_cash_10k", name: "Гидро-стартап", desc: "Заработать $10K за всё время", check: (s) => s.lifetimeCash >= 10000, crystals: 4 },
+  { id: "ach_dam", name: "Покоритель плотин", desc: "Построить Бетонную ГЭС", check: (s) => s.stations.concrete_dam?.unlocked, crystals: 6 },
+  { id: "ach_zone2", name: "Полярный инженер", desc: "Открыть Зону 2: Снежные вершины", check: (s) => s.unlockedZones.includes("glacier"), crystals: 10 },
+  { id: "ach_zone3", name: "Неоновый магнат", desc: "Открыть Зону 3: Неоновый каньон", check: (s) => s.unlockedZones.includes("cyber"), crystals: 20 }
+];
+
+export const AVATAR_CHOICES = ["👷", "⚡", "🌊", "🚀", "👑", "🦊"];
+
+export function createInitialState(engineers = 0, preserved = null) {
   const stations = {};
   for (const def of STATION_DEFS) {
     stations[def.id] = {
@@ -174,18 +297,43 @@ export function createInitialState(engineers = 0) {
   for (const up of UPGRADE_DEFS) {
     upgrades[up.id] = 0;
   }
+  const shopPerks = preserved?.shopPerks || {
+    gold_blades: 0,
+    crystal_battery: 0,
+    offline_amp: 0
+  };
   const startBonus = engineers > 0 ? engineers * 120 : 0;
   return {
     cash: startBonus,
     runCash: startBonus,
-    lifetimeCash: 0,
+    lifetimeCash: preserved?.lifetimeCash || 0,
+    crystals: preserved?.crystals ?? 5,
     engineers,
+    activeZoneId: preserved?.activeZoneId || "valley",
+    unlockedZones: preserved?.unlockedZones || ["valley"],
     stations,
     upgrades,
-    claimedGoals: [],
+    shopPerks,
+    boosters: {
+      turbo_3x: 0,
+      rain_2x: 0,
+      auto_tap: 0
+    },
+    claimedGoals: preserved?.claimedGoals || [],
+    claimedAchievements: preserved?.claimedAchievements || [],
+    profile: preserved?.profile || {
+      name: "Гидро-Мастер",
+      avatar: "👷",
+      totalTaps: 0,
+      playTimeSec: 0
+    },
     overdrive: 0,
     lastSavedAt: Date.now()
   };
+}
+
+export function getActiveZone(state) {
+  return ZONES.find((z) => z.id === state.activeZoneId) || ZONES[0];
 }
 
 export function getMilestoneMultiplier(level) {
@@ -199,8 +347,7 @@ export function getMilestoneMultiplier(level) {
 }
 
 export function getNextMilestoneLevel(level) {
-  const milestones = [10, 25, 50, 100];
-  for (const m of milestones) {
+  for (const m of [10, 25, 50, 100]) {
     if (level < m) return m;
   }
   return null;
@@ -210,12 +357,21 @@ export function getFlowSpeedMultiplier(state) {
   return 1 + (state.upgrades.riverFlow || 0) * 0.22;
 }
 
+export function getBoosterIncomeMultiplier(state) {
+  let mult = 1;
+  if ((state.boosters?.turbo_3x || 0) > 0) mult *= 3;
+  if ((state.boosters?.rain_2x || 0) > 0) mult *= 2;
+  return mult;
+}
+
 export function getGlobalMultiplier(state) {
   const flowMult = getFlowSpeedMultiplier(state);
   const damMult = 1 + (state.upgrades.damPressure || 0) * 0.35;
   const tariffMult = 1 + (state.upgrades.cityTariff || 0) * 0.4;
   const engineerMult = 1 + (state.engineers || 0) * 0.5;
-  return flowMult * damMult * tariffMult * engineerMult;
+  const perkMult = 1 + (state.shopPerks?.gold_blades || 0) * 0.5;
+  const zoneMult = getActiveZone(state).incomeMult;
+  return flowMult * damMult * tariffMult * engineerMult * perkMult * zoneMult;
 }
 
 export function getOverdriveMultiplier(state) {
@@ -231,11 +387,23 @@ export function getStationOutput(state, def, levelOverride = null) {
   }
   const milestone = getMilestoneMultiplier(level);
   const globalMult = getGlobalMultiplier(state);
-  const incomePerSec = def.baseIncome * level * milestone * globalMult;
-  const watts = def.baseWatts * level * milestone * (1 + (state.upgrades.riverFlow || 0) * 0.2);
-  const speedBoost = (1 + (state.upgrades.riverFlow || 0) * 0.08) * getOverdriveMultiplier(state);
-  const effectiveCycleSec = Math.max(0.45, def.cycleSec / speedBoost);
-  const payoutPerCycle = incomePerSec * def.cycleSec;
+  const boosterMult = getBoosterIncomeMultiplier(state);
+  const zoneMult = getActiveZone(state).incomeMult;
+  const batteryMult = 1 + (state.shopPerks?.crystal_battery || 0) * 0.25;
+
+  const incomePerSec = def.baseIncome * level * milestone * globalMult * boosterMult;
+  const watts =
+    def.baseWatts *
+    level *
+    milestone *
+    (1 + (state.upgrades.riverFlow || 0) * 0.2) *
+    batteryMult *
+    Math.sqrt(zoneMult);
+
+  const rainSpeed = (state.boosters?.rain_2x || 0) > 0 ? 1.6 : 1;
+  const speedBoost = (1 + (state.upgrades.riverFlow || 0) * 0.08) * getOverdriveMultiplier(state) * rainSpeed;
+  const effectiveCycleSec = Math.max(0.4, def.cycleSec / speedBoost);
+  const payoutPerCycle = incomePerSec * (def.cycleSec / rainSpeed);
   return {
     incomePerSec,
     watts,
@@ -277,6 +445,16 @@ export function getCityEraIndex(totalWatts) {
   return idx;
 }
 
+export function getPlayerRank(state) {
+  const { totalWatts } = getTotals(state);
+  if (totalWatts >= 30000000) return "Повелитель Неоновой Сети";
+  if (totalWatts >= 1800000) return "Архитектор Мегаполиса";
+  if (totalWatts >= 75000) return "Главный Энергетик";
+  if (totalWatts >= 3000) return "Мастер Турбин";
+  if (totalWatts >= 120) return "Гидро-Инженер";
+  return "Стажёр на ручье";
+}
+
 export function getCurrentGoalProgress(state) {
   const { totalWatts } = getTotals(state);
   const claimed = new Set(state.claimedGoals || []);
@@ -308,6 +486,7 @@ export function getCurrentGoalProgress(state) {
 export function checkAndClaimGoals(state) {
   const { totalWatts } = getTotals(state);
   if (!Array.isArray(state.claimedGoals)) state.claimedGoals = [];
+  if (!Array.isArray(state.unlockedZones)) state.unlockedZones = ["valley"];
   const newlyClaimed = [];
   for (const goal of GRAND_GOALS) {
     if (!state.claimedGoals.includes(goal.id) && totalWatts >= goal.targetWatts) {
@@ -315,10 +494,34 @@ export function checkAndClaimGoals(state) {
       state.cash += goal.rewardCash;
       state.runCash += goal.rewardCash;
       state.lifetimeCash += goal.rewardCash;
+      state.crystals = (state.crystals || 0) + (goal.rewardCrystals || 0);
+      if (goal.unlocksZoneId && !state.unlockedZones.includes(goal.unlocksZoneId)) {
+        state.unlockedZones.push(goal.unlocksZoneId);
+      }
       newlyClaimed.push(goal);
     }
   }
   return newlyClaimed;
+}
+
+export function checkAchievements(state) {
+  if (!Array.isArray(state.claimedAchievements)) state.claimedAchievements = [];
+  const unlockedNow = [];
+  for (const ach of ACHIEVEMENT_DEFS) {
+    if (!state.claimedAchievements.includes(ach.id) && ach.check(state)) {
+      state.claimedAchievements.push(ach.id);
+      state.crystals = (state.crystals || 0) + ach.crystals;
+      unlockedNow.push(ach);
+    }
+  }
+  return unlockedNow;
+}
+
+export function switchZone(state, zoneId) {
+  if (!state.unlockedZones.includes(zoneId)) return false;
+  if (state.activeZoneId === zoneId) return false;
+  state.activeZoneId = zoneId;
+  return true;
 }
 
 export function getBulkStationCost(def, currentLevel, count) {
@@ -366,12 +569,12 @@ export function getUpgradeEffectText(state, def) {
   if (def.id === "riverFlow") {
     const cur = 1 + lvl * 0.22;
     const nxt = 1 + (lvl + 1) * 0.22;
-    return `Напор: x${cur.toFixed(2)} → x${nxt.toFixed(2)} (+${formatCompact(totals.baseIncomePerSec * 0.22 / cur, "$")}/с)`;
+    return `Напор: x${cur.toFixed(2)} → x${nxt.toFixed(2)} (+${formatCompact((totals.baseIncomePerSec * 0.22) / cur, "$")}/с)`;
   }
   if (def.id === "damPressure") {
     const cur = 1 + lvl * 0.35;
     const nxt = 1 + (lvl + 1) * 0.35;
-    return `Мощь ГЭС: x${cur.toFixed(2)} → x${nxt.toFixed(2)} (+${formatCompact(totals.baseIncomePerSec * 0.35 / cur, "$")}/с)`;
+    return `Мощь ГЭС: x${cur.toFixed(2)} → x${nxt.toFixed(2)} (+${formatCompact((totals.baseIncomePerSec * 0.35) / cur, "$")}/с)`;
   }
   if (def.id === "gridEfficiency") {
     const curTap = totals.tapBonus;
@@ -381,9 +584,60 @@ export function getUpgradeEffectText(state, def) {
   if (def.id === "cityTariff") {
     const cur = 1 + lvl * 0.4;
     const nxt = 1 + (lvl + 1) * 0.4;
-    return `Тариф города: x${cur.toFixed(1)} → x${nxt.toFixed(1)} (+${formatCompact(totals.baseIncomePerSec * 0.4 / cur, "$")}/с)`;
+    return `Тариф города: x${cur.toFixed(1)} → x${nxt.toFixed(1)} (+${formatCompact((totals.baseIncomePerSec * 0.4) / cur, "$")}/с)`;
   }
   return def.targetLabel;
+}
+
+export function getBoosterCashCost(state, boosterDef) {
+  const { effectiveIncomePerSec } = getTotals(state);
+  const scale = Math.max(80, effectiveIncomePerSec * 28);
+  if (boosterDef.id === "cash_pack") return null; // Crystal-only instant cash pack
+  if (boosterDef.id === "turbo_3x") return Math.floor(scale * 1.4);
+  if (boosterDef.id === "rain_2x") return Math.floor(scale * 1.0);
+  return Math.floor(scale * 0.9);
+}
+
+export function buyBoosterAction(state, boosterId, payWith = "cash") {
+  const def = BOOSTER_DEFS.find((b) => b.id === boosterId);
+  if (!def) return { ok: false, cashGranted: 0 };
+
+  if (payWith === "crystals") {
+    if ((state.crystals || 0) < def.crystalCost) return { ok: false, cashGranted: 0 };
+    state.crystals -= def.crystalCost;
+  } else {
+    const cashCost = getBoosterCashCost(state, def);
+    if (cashCost === null || state.cash < cashCost) return { ok: false, cashGranted: 0 };
+    state.cash -= cashCost;
+  }
+
+  if (def.id === "cash_pack") {
+    const { effectiveIncomePerSec } = getTotals(state);
+    const grant = Math.max(500, Math.floor(effectiveIncomePerSec * 120));
+    state.cash += grant;
+    state.runCash += grant;
+    state.lifetimeCash += grant;
+    return { ok: true, cashGranted: grant };
+  }
+
+  state.boosters[def.id] = (state.boosters[def.id] || 0) + def.durationSec;
+  return { ok: true, cashGranted: 0 };
+}
+
+export function getShopPerkCost(perkDef, level) {
+  return perkDef.baseCrystalCost + level * perkDef.costStep;
+}
+
+export function buyShopPerkAction(state, perkId) {
+  const def = SHOP_PERK_DEFS.find((p) => p.id === perkId);
+  if (!def) return false;
+  const lvl = state.shopPerks?.[perkId] || 0;
+  if (lvl >= def.maxLevel) return false;
+  const cost = getShopPerkCost(def, lvl);
+  if ((state.crystals || 0) < cost) return false;
+  state.crystals -= cost;
+  state.shopPerks[perkId] = lvl + 1;
+  return true;
 }
 
 export function computePendingEngineers(state) {
@@ -435,9 +689,16 @@ export function triggerPrestige(state) {
   const gained = computePendingEngineers(state);
   if (gained <= 0) return 0;
   const totalEngineers = state.engineers + gained;
-  const lifetime = state.lifetimeCash;
-  const next = createInitialState(totalEngineers);
-  next.lifetimeCash = lifetime;
+  const next = createInitialState(totalEngineers, {
+    lifetimeCash: state.lifetimeCash,
+    crystals: state.crystals,
+    shopPerks: state.shopPerks,
+    activeZoneId: state.activeZoneId,
+    unlockedZones: state.unlockedZones,
+    claimedGoals: state.claimedGoals,
+    claimedAchievements: state.claimedAchievements,
+    profile: state.profile
+  });
   Object.assign(state, next);
   return gained;
 }
@@ -448,18 +709,25 @@ export function applyTap(state) {
   state.runCash += tapBonus;
   state.lifetimeCash += tapBonus;
   state.overdrive = Math.min(1, state.overdrive + 0.16);
+  state.profile.totalTaps = (state.profile.totalTaps || 0) + 1;
   return tapBonus;
 }
 
-/**
- * Advances each active hydro station's mining cycle and emits payout events
- * when a station finishes a block/cycle so 3D popups & cash stay synchronized.
- */
 export function tickEconomy(state, dtSeconds) {
   const clampedDt = Math.min(0.25, Math.max(0, dtSeconds));
+  state.profile.playTimeSec = (state.profile.playTimeSec || 0) + clampedDt;
+
+  // Tick down active boosters
+  for (const key of ["turbo_3x", "rain_2x", "auto_tap"]) {
+    if ((state.boosters?.[key] || 0) > 0) {
+      state.boosters[key] = Math.max(0, state.boosters[key] - clampedDt);
+    }
+  }
+
   const overdriveMult = getOverdriveMultiplier(state);
+  const rainMult = (state.boosters?.rain_2x || 0) > 0 ? 1.6 : 1;
   const flowFactor = 1 + (state.upgrades.riverFlow || 0) * 0.08;
-  const speedBoost = flowFactor * overdriveMult;
+  const speedBoost = flowFactor * overdriveMult * rainMult;
   const payouts = [];
 
   for (const def of STATION_DEFS) {
@@ -524,11 +792,18 @@ export function loadState() {
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return { state: createInitialState(0), offlineEarned: 0, offlineSeconds: 0 };
     const parsed = JSON.parse(raw);
-    const fresh = createInitialState(parsed.engineers || 0);
+    const fresh = createInitialState(parsed.engineers || 0, {
+      lifetimeCash: Number(parsed.lifetimeCash) || 0,
+      crystals: parsed.crystals ?? 5,
+      shopPerks: parsed.shopPerks || { gold_blades: 0, crystal_battery: 0, offline_amp: 0 },
+      activeZoneId: parsed.activeZoneId || "valley",
+      unlockedZones: Array.isArray(parsed.unlockedZones) ? parsed.unlockedZones : ["valley"],
+      claimedGoals: Array.isArray(parsed.claimedGoals) ? parsed.claimedGoals : [],
+      claimedAchievements: Array.isArray(parsed.claimedAchievements) ? parsed.claimedAchievements : [],
+      profile: parsed.profile || { name: "Гидро-Мастер", avatar: "👷", totalTaps: 0, playTimeSec: 0 }
+    });
     fresh.cash = Number(parsed.cash) || 0;
     fresh.runCash = Number(parsed.runCash) || fresh.cash;
-    fresh.lifetimeCash = Number(parsed.lifetimeCash) || fresh.cash;
-    fresh.claimedGoals = Array.isArray(parsed.claimedGoals) ? parsed.claimedGoals : [];
     fresh.overdrive = 0;
 
     if (parsed.stations) {
@@ -554,7 +829,8 @@ export function loadState() {
 
     const elapsedSec = Math.min(8 * 3600, Math.max(0, (Date.now() - (parsed.lastSavedAt || Date.now())) / 1000));
     const { baseIncomePerSec } = getTotals(fresh);
-    const offlineEarned = elapsedSec >= 10 ? baseIncomePerSec * elapsedSec * 0.5 : 0;
+    const offlineMult = 0.5 + (fresh.shopPerks?.offline_amp || 0) * 0.25;
+    const offlineEarned = elapsedSec >= 10 ? baseIncomePerSec * elapsedSec * offlineMult : 0;
     if (offlineEarned > 0) {
       fresh.cash += offlineEarned;
       fresh.runCash += offlineEarned;

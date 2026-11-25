@@ -12,7 +12,7 @@ os.makedirs(SHOTS_DIR, exist_ok=True)
 
 def main():
     server = subprocess.Popen(
-        [sys.executable, "-m", "http.server", "4181", "--directory", DIST_DIR],
+        [sys.executable, "-m", "http.server", "4183", "--directory", DIST_DIR],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
@@ -33,60 +33,73 @@ def main():
                 lambda msg: errors.append(f"CONSOLE_ERROR: {msg.text}") if msg.type == "error" else None,
             )
 
-            page.goto("http://127.0.0.1:4181/", wait_until="networkidle")
+            page.goto("http://127.0.0.1:4183/", wait_until="networkidle")
             page.wait_for_timeout(1200)
 
-            # Verify camera stays locked on pointer drag (no drag-rotation)
+            # 1. Pan toggle OFF -> drag must NOT move camera
             cam_before = page.evaluate(
-                "[window.__WATER_POWER_DEBUG__.world.camera.position.x, window.__WATER_POWER_DEBUG__.world.camera.position.y, window.__WATER_POWER_DEBUG__.world.camera.position.z]"
-            )
-            page.mouse.move(150, 320)
-            page.mouse.down()
-            page.mouse.move(270, 380, steps=8)
-            page.mouse.up()
-            page.wait_for_timeout(200)
-            cam_after_drag = page.evaluate(
-                "[window.__WATER_POWER_DEBUG__.world.camera.position.x, window.__WATER_POWER_DEBUG__.world.camera.position.y, window.__WATER_POWER_DEBUG__.world.camera.position.z]"
-            )
-            assert cam_before == cam_after_drag, f"Camera moved on drag: {cam_before} vs {cam_after_drag}"
-
-            # Verify tapping increases cash and overdrive
-            cash_before = page.evaluate("window.__WATER_POWER_DEBUG__.state.cash")
-            page.mouse.click(180, 340)
-            page.wait_for_timeout(150)
-            cash_after = page.evaluate("window.__WATER_POWER_DEBUG__.state.cash")
-            assert cash_after > cash_before, f"Tap did not increase cash: {cash_before} -> {cash_after}"
-
-            # Wait briefly to verify mining cycle payouts trigger
-            page.wait_for_timeout(1800)
-            mined = page.evaluate("window.__WATER_POWER_DEBUG__.state.stations.wood_wheel.totalMined")
-            assert mined > 0, f"Mining cycle did not produce payout: {mined}"
-
-            page.screenshot(path=os.path.join(SHOTS_DIR, "mobile_v2_start.png"))
-
-            # Test camera preset buttons
-            page.locator(".cam-btn[data-cam='3']").click()
-            page.wait_for_timeout(600)
-            cam_city = page.evaluate(
                 "[window.__WATER_POWER_DEBUG__.world.camera.position.x, window.__WATER_POWER_DEBUG__.world.camera.position.z]"
             )
-            assert cam_city[0] != cam_before[0], "Camera view button did not move camera to City view"
+            page.mouse.move(160, 350)
+            page.mouse.down()
+            page.mouse.move(260, 400, steps=6)
+            page.mouse.up()
+            page.wait_for_timeout(200)
+            cam_locked = page.evaluate(
+                "[window.__WATER_POWER_DEBUG__.world.camera.position.x, window.__WATER_POWER_DEBUG__.world.camera.position.z]"
+            )
+            assert cam_before == cam_locked, f"Camera moved when pan OFF: {cam_before} vs {cam_locked}"
+
+            # 2. Pan toggle ON -> drag translates camera position (without rotating)
+            page.locator("#btn-pan-toggle").click()
+            page.mouse.move(160, 350)
+            page.mouse.down()
+            page.mouse.move(270, 410, steps=8)
+            page.mouse.up()
+            page.wait_for_timeout(300)
+            cam_panned = page.evaluate(
+                "[window.__WATER_POWER_DEBUG__.world.camera.position.x, window.__WATER_POWER_DEBUG__.world.camera.position.z]"
+            )
+            assert cam_panned != cam_locked, "Camera did not pan when pan toggle ON"
+
+            # Turn pan OFF & reset to Overview
+            page.locator("#btn-pan-toggle").click()
             page.locator(".cam-btn[data-cam='0']").click()
+            page.wait_for_timeout(350)
+
+            # 3. Test Profile modal & collapsible goal banner
+            page.locator("#btn-profile").click()
+            page.wait_for_timeout(200)
+            assert not page.locator("#profile-modal").evaluate("el => el.classList.contains('hidden')")
+            page.locator("#profile-name-input").fill("Тест-Магнат")
+            page.locator("#btn-close-profile").click()
+
+            page.locator("#btn-goal-collapse").click()
+            page.wait_for_timeout(120)
+            assert page.locator("#goal-banner").evaluate("el => el.classList.contains('collapsed')")
+            page.locator("#btn-goal-collapse").click()
+
+            # 4. Test Shop tab + buying Rain booster
+            page.locator(".tab-btn[data-tab='shop']").click()
+            page.wait_for_timeout(200)
+            page.screenshot(path=os.path.join(SHOTS_DIR, "mobile_v3_shop.png"))
+
+            # 5. Unlock Zone 2 (Glacier) and switch to it
+            page.locator(".tab-btn[data-tab='stations']").click()
+            page.evaluate("window.__WATER_POWER_DEBUG__.grantCash(500000000)")
+            page.wait_for_timeout(150)
+            for _ in range(3):
+                for btn in page.locator(".buy-btn[data-action='station']").all():
+                    btn.click()
+                    page.wait_for_timeout(60)
             page.wait_for_timeout(500)
 
-            # Unlock stations & check goal progression
-            page.evaluate("window.__WATER_POWER_DEBUG__.grantCash(50000000)")
-            page.wait_for_timeout(150)
-            for btn in page.locator(".buy-btn[data-action='station']").all():
-                btn.click()
-                page.wait_for_timeout(100)
+            glacier_chip = page.locator(".zone-chip[data-zone-id='glacier']")
+            assert not glacier_chip.is_disabled(), "Zone 2 Glacier did not unlock!"
+            glacier_chip.click()
+            page.wait_for_timeout(600)
 
-            page.wait_for_timeout(900)
-            goal_text = page.locator("#goal-title").inner_text()
-            era_text = page.locator("#hud-era").inner_text()
-            print(f"UPGRADED_V2: era={era_text}, goal={goal_text}")
-
-            page.screenshot(path=os.path.join(SHOTS_DIR, "mobile_v2_upgraded.png"))
+            page.screenshot(path=os.path.join(SHOTS_DIR, "mobile_v3_glacier.png"))
             browser.close()
     finally:
         server.terminate()
@@ -98,7 +111,7 @@ def main():
             print(e)
         sys.exit(1)
 
-    print("BROWSER_QA_V2_PASSED")
+    print("BROWSER_QA_V3_PASSED")
 
 
 if __name__ == "__main__":

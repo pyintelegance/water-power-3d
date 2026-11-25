@@ -43,11 +43,14 @@ export class WaterPowerWorld {
     this.clock = new THREE.Clock();
     this.presetIndex = 0;
 
-    // Camera preset smooth state (no touch-drag movement)
+    // Camera preset + optional hand-panning state (no rotation)
+    this.panEnabled = false;
+    this.panOffset = new THREE.Vector3(0, 0, 0);
     this.cameraPos = CAMERA_PRESETS[0].pos.clone();
     this.targetOffset = CAMERA_PRESETS[0].target.clone();
     this.desiredCameraPos = CAMERA_PRESETS[0].pos.clone();
     this.desiredTarget = CAMERA_PRESETS[0].target.clone();
+    this.currentZoneId = "valley";
 
     this.stationNodes = {};
     this.eraGroups = [];
@@ -57,6 +60,7 @@ export class WaterPowerWorld {
     this.energyPulses = [];
     this.pulsePaths = [];
     this.splashPool = [];
+    this.rainPool = [];
     this.trees = [];
 
     this.initRenderer();
@@ -66,6 +70,7 @@ export class WaterPowerWorld {
     this.buildPowerLines();
     this.buildCityEras();
     this.buildSplashParticles();
+    this.buildRainParticles();
     this.bindInput();
     this.resize();
   }
@@ -91,9 +96,11 @@ export class WaterPowerWorld {
     this.camera = new THREE.PerspectiveCamera(42, 1, 0.5, 140);
 
     const hemi = new THREE.HemisphereLight("#d8f3ff", "#264653", 0.95);
+    this.hemiLight = hemi;
     this.scene.add(hemi);
 
     const sun = new THREE.DirectionalLight("#fff6df", 1.85);
+    this.sunLight = sun;
     sun.position.set(16, 26, 14);
     sun.castShadow = true;
     sun.shadow.mapSize.set(1024, 1024);
@@ -112,11 +119,18 @@ export class WaterPowerWorld {
   }
 
   buildTerrainAndRiver() {
-    const grassMat = flatMat("#45a85f", 0.88);
-    const darkGrassMat = flatMat("#2f855a", 0.9);
-    const rockMat = flatMat("#64748b", 0.92);
-    const cliffMat = flatMat("#475569", 0.92);
-    const sandMat = flatMat("#d6b98c", 0.95);
+    this.grassMat = flatMat("#45a85f", 0.88);
+    this.darkGrassMat = flatMat("#2f855a", 0.9);
+    this.rockMat = flatMat("#64748b", 0.92);
+    this.cliffMat = flatMat("#475569", 0.92);
+    this.sandMat = flatMat("#d6b98c", 0.95);
+    this.leafMat = flatMat("#15803d");
+
+    const grassMat = this.grassMat;
+    const darkGrassMat = this.darkGrassMat;
+    const rockMat = this.rockMat;
+    const cliffMat = this.cliffMat;
+    const sandMat = this.sandMat;
 
     // Base valley slab
     addBox(this.scene, 44, 3, 40, 2, -1.7, 0, flatMat("#1e293b", 0.95), false);
@@ -179,7 +193,7 @@ export class WaterPowerWorld {
 
     // Low-poly pine trees & rocks for life
     const trunkMat = flatMat("#78350f");
-    const leafMat = flatMat("#15803d");
+    const leafMat = this.leafMat;
     const treeCoords = [
       [-6.5, 1.0, 9], [-8.2, 1.0, 4], [-7.0, 1.0, -2], [-9.2, 3.2, -8],
       [-5.5, 3.9, -13], [14.5, 0.4, 10], [15.8, 0.4, 2], [14.2, 0.4, -7]
@@ -504,10 +518,82 @@ export class WaterPowerWorld {
     }
   }
 
+  buildRainParticles() {
+    const count = 110;
+    const geo = new THREE.BoxGeometry(0.05, 0.55, 0.05);
+    const mat = new THREE.MeshBasicMaterial({ color: "#bae6fd", transparent: true, opacity: 0.72 });
+    this.rainInstanced = new THREE.InstancedMesh(geo, mat, count);
+    this.rainInstanced.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    this.rainInstanced.visible = false;
+    this.scene.add(this.rainInstanced);
+
+    for (let i = 0; i < count; i += 1) {
+      this.rainPool.push({
+        x: (Math.random() - 0.5) * 32,
+        y: Math.random() * 14,
+        z: (Math.random() - 0.5) * 28,
+        speed: 14 + Math.random() * 6
+      });
+    }
+  }
+
+  setZoneTheme(zoneId) {
+    if (this.currentZoneId === zoneId) return;
+    this.currentZoneId = zoneId;
+    if (zoneId === "glacier") {
+      this.scene.background.set("#b6e1ff");
+      this.scene.fog.color.set("#cdeaff");
+      this.grassMat.color.set("#e2f1ff");
+      this.darkGrassMat.color.set("#bae6fd");
+      this.rockMat.color.set("#64748b");
+      this.cliffMat.color.set("#475569");
+      this.sandMat.color.set("#cbd5e1");
+      this.leafMat.color.set("#0f766e");
+      this.waterMat.color.set("#06b6d4");
+      this.waterMat.emissive.set("#000000");
+      this.waterMat.emissiveIntensity = 0;
+      this.sunLight.color.set("#f0f9ff");
+      this.sunLight.intensity = 1.95;
+    } else if (zoneId === "cyber") {
+      this.scene.background.set("#070d1f");
+      this.scene.fog.color.set("#0b132b");
+      this.grassMat.color.set("#1e293b");
+      this.darkGrassMat.color.set("#0f172a");
+      this.rockMat.color.set("#334155");
+      this.cliffMat.color.set("#1e1b4b");
+      this.sandMat.color.set("#312e81");
+      this.leafMat.color.set("#22d3ee");
+      this.waterMat.color.set("#06b6d4");
+      this.waterMat.emissive.set("#0891b2");
+      this.waterMat.emissiveIntensity = 0.55;
+      this.sunLight.color.set("#a5f3fc");
+      this.sunLight.intensity = 1.35;
+    } else {
+      this.scene.background.set("#73c2fb");
+      this.scene.fog.color.set("#8dd1fc");
+      this.grassMat.color.set("#45a85f");
+      this.darkGrassMat.color.set("#2f855a");
+      this.rockMat.color.set("#64748b");
+      this.cliffMat.color.set("#475569");
+      this.sandMat.color.set("#d6b98c");
+      this.leafMat.color.set("#15803d");
+      this.waterMat.color.set("#0ea5e9");
+      this.waterMat.emissive.set("#000000");
+      this.waterMat.emissiveIntensity = 0;
+      this.sunLight.color.set("#fff6df");
+      this.sunLight.intensity = 1.85;
+    }
+  }
+
+  setPanEnabled(enabled) {
+    this.panEnabled = Boolean(enabled);
+  }
+
   setCameraPreset(index) {
     const safeIdx = Math.max(0, Math.min(CAMERA_PRESETS.length - 1, index));
     this.presetIndex = safeIdx;
     const preset = CAMERA_PRESETS[safeIdx];
+    this.panOffset.set(0, 0, 0);
     this.desiredCameraPos.copy(preset.pos);
     this.desiredTarget.copy(preset.target);
     return preset.name;
@@ -536,21 +622,54 @@ export class WaterPowerWorld {
   bindInput() {
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
+    let dragging = false;
+    let movedDist = 0;
+    let lastX = 0;
+    let lastY = 0;
 
-    // Screen stays locked; tapping anywhere on the 3D scene boosts water & spawns splash
     this.canvas.addEventListener("pointerdown", (e) => {
-      const rect = this.canvas.getBoundingClientRect();
-      pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-      pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-      raycaster.setFromCamera(pointer, this.camera);
-      const hit = raycaster.intersectObject(this.riverMesh);
-      if (hit.length > 0) {
-        this.spawnSplash(hit[0].point.x, hit[0].point.y + 0.2, hit[0].point.z, 10);
-      } else {
-        this.spawnSplash(-1.2, 0.5, 2.0, 8);
-      }
-      if (this.onTapWorld) {
-        this.onTapWorld(e.clientX, e.clientY);
+      dragging = true;
+      movedDist = 0;
+      lastX = e.clientX;
+      lastY = e.clientY;
+    });
+
+    window.addEventListener("pointermove", (e) => {
+      if (!dragging || !this.panEnabled) return;
+      const dx = e.clientX - lastX;
+      const dy = e.clientY - lastY;
+      movedDist += Math.hypot(dx, dy);
+      lastX = e.clientX;
+      lastY = e.clientY;
+
+      // Pure camera translation (panning along XZ, never rotating)
+      const stepX = (-dx * 0.035) - (dy * 0.02);
+      const stepZ = (-dy * 0.035) + (dx * 0.02);
+      this.panOffset.x = THREE.MathUtils.clamp(this.panOffset.x + stepX, -11, 13);
+      this.panOffset.z = THREE.MathUtils.clamp(this.panOffset.z + stepZ, -13, 12);
+
+      const preset = CAMERA_PRESETS[this.presetIndex];
+      this.desiredCameraPos.copy(preset.pos).add(this.panOffset);
+      this.desiredTarget.copy(preset.target).add(this.panOffset);
+    });
+
+    window.addEventListener("pointerup", (e) => {
+      if (!dragging) return;
+      dragging = false;
+      if (movedDist < 10 || !this.panEnabled) {
+        const rect = this.canvas.getBoundingClientRect();
+        pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+        raycaster.setFromCamera(pointer, this.camera);
+        const hit = raycaster.intersectObject(this.riverMesh);
+        if (hit.length > 0) {
+          this.spawnSplash(hit[0].point.x, hit[0].point.y + 0.2, hit[0].point.z, 10);
+        } else {
+          this.spawnSplash(-1.2, 0.5, 2.0, 8);
+        }
+        if (this.onTapWorld) {
+          this.onTapWorld(e.clientX, e.clientY);
+        }
       }
     });
   }
@@ -571,8 +690,11 @@ export class WaterPowerWorld {
     const dt = Math.min(0.05, this.clock.getDelta());
     const t = this.clock.elapsedTime;
 
+    this.setZoneTheme(state.activeZoneId || "valley");
+
     const { totalWatts, overdriveMult } = getTotals(state);
-    const flowSpeed = (1 + state.upgrades.riverFlow * 0.14) * overdriveMult;
+    const rainSpeed = (state.boosters?.rain_2x || 0) > 0 ? 1.55 : 1;
+    const flowSpeed = (1 + state.upgrades.riverFlow * 0.14) * overdriveMult * rainSpeed;
 
     // Smooth preset camera transition
     this.cameraPos.lerp(this.desiredCameraPos, 0.12);
@@ -691,6 +813,26 @@ export class WaterPowerWorld {
       this.splashInstanced.setMatrixAt(i, this.dummy.matrix);
     }
     this.splashInstanced.instanceMatrix.needsUpdate = true;
+
+    // Rainstorm booster FX
+    const raining = (state.boosters?.rain_2x || 0) > 0;
+    this.rainInstanced.visible = raining;
+    if (raining) {
+      for (let i = 0; i < this.rainPool.length; i += 1) {
+        const r = this.rainPool[i];
+        r.y -= r.speed * dt;
+        if (r.y < 0) {
+          r.y = 14;
+          r.x = (Math.random() - 0.5) * 32;
+          r.z = (Math.random() - 0.5) * 28;
+        }
+        this.dummy.position.set(r.x, r.y, r.z);
+        this.dummy.scale.setScalar(1);
+        this.dummy.updateMatrix();
+        this.rainInstanced.setMatrixAt(i, this.dummy.matrix);
+      }
+      this.rainInstanced.instanceMatrix.needsUpdate = true;
+    }
 
     this.renderer.render(this.scene, this.camera);
   }

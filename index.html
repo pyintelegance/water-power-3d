@@ -26,7 +26,7 @@
         <span class="stat-icon">💧</span>
         <div class="stat-text">
           <div class="stat-main" id="hud-cash">$0</div>
-          <div class="stat-sub" id="hud-income">+$0/с · добыча с ГЭС</div>
+          <div class="stat-sub" id="hud-income">+$0/с</div>
         </div>
       </div>
 
@@ -38,39 +38,50 @@
         </div>
       </div>
 
+      <div class="crystal-pill" id="hud-crystals" title="Энерго-кристаллы">💎 5</div>
+
+      <button class="icon-btn" id="btn-profile" title="Профиль" aria-label="Профиль">👤</button>
       <button class="icon-btn" id="btn-sound" title="Звук" aria-label="Звук">🔊</button>
     </header>
 
-    <!-- Grand Goal Progress Bar -->
+    <!-- Collapsible Grand Goal + Zone Bar -->
     <div class="goal-banner" id="goal-banner">
       <div class="goal-head">
-        <span class="goal-title" id="goal-title">🎯 ЦЕЛЬ: Зажечь свет в деревне</span>
-        <span class="goal-numbers" id="goal-numbers">10 / 120 W</span>
+        <span class="goal-title" id="goal-title">🎯 ЦЕЛЬ 1/6: Зажечь свет в деревне</span>
+        <div class="goal-head-right">
+          <span class="goal-numbers" id="goal-numbers">10 W / 120 W</span>
+          <button class="mini-collapse-btn" id="btn-goal-collapse" title="Свернуть цель">▾</button>
+        </div>
       </div>
-      <div class="goal-track">
-        <div class="goal-fill" id="goal-fill"></div>
+      <div class="goal-details" id="goal-details">
+        <div class="goal-track">
+          <div class="goal-fill" id="goal-fill"></div>
+        </div>
+        <div class="goal-sub" id="goal-sub">Награда: +$95 · +3 💎</div>
+        <div class="zone-strip" id="zone-strip"></div>
       </div>
-      <div class="goal-sub" id="goal-sub">Награда: +$95 · появятся первые дома</div>
     </div>
 
-    <!-- Overdrive / Tap Meter + Camera View Buttons -->
+    <!-- Overdrive + Camera Bar + Active Boosters -->
     <div class="mid-controls">
       <div class="overdrive-bar">
         <div class="overdrive-fill" id="overdrive-fill"></div>
         <span class="overdrive-label" id="overdrive-label">⚡ ТАПАЙ ПО ВОДЕ ДЛЯ РАЗГОНА (x1.0)</span>
       </div>
 
-      <div class="cam-bar" role="group" aria-label="Выбор вида камеры">
+      <div class="cam-bar" role="group" aria-label="Управление камерой">
         <button class="cam-btn active" data-cam="0">🌍 Обзор</button>
         <button class="cam-btn" data-cam="1">🎡 Станции</button>
-        <button class="cam-btn" data-cam="2">🏗️ Плотина</button>
         <button class="cam-btn" data-cam="3">🏙️ Город</button>
+        <button class="pan-toggle-btn" id="btn-pan-toggle" aria-pressed="false">✋ Двигать: ВЫКЛ</button>
       </div>
+
+      <div class="active-boosters hidden" id="active-boosters"></div>
     </div>
 
-    <!-- Goal / Era Toast -->
+    <!-- Goal / Era / Zone Toast -->
     <div class="era-toast hidden" id="era-toast">
-      <span class="era-toast-badge" id="era-toast-badge">ЦЕЛЬ ДОСТИГНУТА!</span>
+      <span class="era-toast-badge" id="era-toast-badge">ЦЕЛЬ ВЫПОЛНЕНА!</span>
       <strong id="era-toast-title">Деревня у воды</strong>
     </div>
 
@@ -80,6 +91,7 @@
         <div class="tabs" role="tablist">
           <button class="tab-btn active" data-tab="stations" role="tab">⚙️ Станции</button>
           <button class="tab-btn" data-tab="upgrades" role="tab">🌊 Апгрейды</button>
+          <button class="tab-btn" data-tab="shop" role="tab">🛒 Магазин</button>
           <button class="tab-btn" data-tab="prestige" role="tab">👷 Инженеры</button>
         </div>
         <div class="drawer-controls">
@@ -92,6 +104,33 @@
         <div class="cards-list" id="cards-list"></div>
       </div>
     </section>
+
+    <!-- Profile Modal -->
+    <div class="modal-backdrop hidden" id="profile-modal">
+      <div class="modal-card profile-card">
+        <div class="modal-head-row">
+          <h2>👤 Профиль игрока</h2>
+          <button class="mini-close-btn" id="btn-close-profile">✕</button>
+        </div>
+
+        <div class="profile-identity">
+          <div class="avatar-picker" id="avatar-picker"></div>
+          <input
+            type="text"
+            id="profile-name-input"
+            class="profile-name-input"
+            maxlength="20"
+            placeholder="Ваш никнейм"
+          />
+          <div class="profile-rank" id="profile-rank">Стажёр на ручье</div>
+        </div>
+
+        <div class="profile-stats-grid" id="profile-stats-grid"></div>
+
+        <h3 class="ach-heading">🏆 Достижения (награда 💎)</h3>
+        <div class="ach-list" id="ach-list"></div>
+      </div>
+    </div>
 
     <!-- Offline Income Modal -->
     <div class="modal-backdrop hidden" id="offline-modal">
