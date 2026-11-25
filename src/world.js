@@ -2,9 +2,10 @@ import * as THREE from "three";
 import { STATION_DEFS, getCityEraIndex, getTotals } from "./economy.js";
 
 const CAMERA_PRESETS = [
-  { name: "Обзор", pos: new THREE.Vector3(17.5, 16.5, 20.5), target: new THREE.Vector3(2.8, 0.8, 1.0) },
-  { name: "Плотина", pos: new THREE.Vector3(10.5, 9.5, 8.5), target: new THREE.Vector3(-1.2, 1.5, -2.5) },
-  { name: "Город", pos: new THREE.Vector3(21, 12.5, 13.5), target: new THREE.Vector3(8.5, 1.8, -0.5) }
+  { name: "Обзор", pos: new THREE.Vector3(18.5, 17.5, 22.0), target: new THREE.Vector3(2.8, 0.8, 0.8) },
+  { name: "Станции", pos: new THREE.Vector3(8.5, 8.2, 11.5), target: new THREE.Vector3(-1.2, 1.0, 2.2) },
+  { name: "Плотина", pos: new THREE.Vector3(10.5, 9.5, 7.5), target: new THREE.Vector3(-1.2, 1.6, -4.5) },
+  { name: "Город", pos: new THREE.Vector3(21.5, 13.0, 14.0), target: new THREE.Vector3(8.5, 1.8, -0.5) }
 ];
 
 function flatMat(color, roughness = 0.78, metalness = 0.05, extra = {}) {
@@ -42,11 +43,11 @@ export class WaterPowerWorld {
     this.clock = new THREE.Clock();
     this.presetIndex = 0;
 
-    // Orbit state
-    this.spherical = { theta: 0.66, phi: 0.96, radius: 29.5 };
-    this.targetOffset = new THREE.Vector3(2.8, 0.8, 1.0);
-    this.desiredSpherical = { ...this.spherical };
-    this.desiredTarget = this.targetOffset.clone();
+    // Camera preset smooth state (no touch-drag movement)
+    this.cameraPos = CAMERA_PRESETS[0].pos.clone();
+    this.targetOffset = CAMERA_PRESETS[0].target.clone();
+    this.desiredCameraPos = CAMERA_PRESETS[0].pos.clone();
+    this.desiredTarget = CAMERA_PRESETS[0].target.clone();
 
     this.stationNodes = {};
     this.eraGroups = [];
@@ -345,6 +346,7 @@ export class WaterPowerWorld {
         spinner,
         extraSpinner,
         scaleAnim: 0.01,
+        pulseBoost: 0,
         isQuantum: def.id === "quantum_hydro"
       };
     });
@@ -502,83 +504,55 @@ export class WaterPowerWorld {
     }
   }
 
-  cycleCameraPreset() {
-    this.presetIndex = (this.presetIndex + 1) % CAMERA_PRESETS.length;
-    const preset = CAMERA_PRESETS[this.presetIndex];
-    const offset = preset.pos.clone().sub(preset.target);
-    const radius = offset.length();
-    this.desiredSpherical = {
-      radius,
-      phi: Math.acos(THREE.MathUtils.clamp(offset.y / radius, -0.95, 0.95)),
-      theta: Math.atan2(offset.x, offset.z)
-    };
+  setCameraPreset(index) {
+    const safeIdx = Math.max(0, Math.min(CAMERA_PRESETS.length - 1, index));
+    this.presetIndex = safeIdx;
+    const preset = CAMERA_PRESETS[safeIdx];
+    this.desiredCameraPos.copy(preset.pos);
     this.desiredTarget.copy(preset.target);
     return preset.name;
+  }
+
+  triggerStationPulse(stationId) {
+    const node = this.stationNodes[stationId];
+    if (node) {
+      node.pulseBoost = 1.0;
+    }
+  }
+
+  getStationScreenPosition(stationId) {
+    const node = this.stationNodes[stationId];
+    if (!node) return null;
+    const worldPos = node.slot.position.clone().add(new THREE.Vector3(0, 2.3, 0));
+    const projected = worldPos.project(this.camera);
+    if (projected.z > 1) return null;
+    const rect = this.canvas.getBoundingClientRect();
+    return {
+      x: rect.left + ((projected.x + 1) * 0.5) * rect.width,
+      y: rect.top + ((-projected.y + 1) * 0.5) * rect.height
+    };
   }
 
   bindInput() {
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
-    let dragging = false;
-    let movedDist = 0;
-    let lastX = 0;
-    let lastY = 0;
 
+    // Screen stays locked; tapping anywhere on the 3D scene boosts water & spawns splash
     this.canvas.addEventListener("pointerdown", (e) => {
-      dragging = true;
-      movedDist = 0;
-      lastX = e.clientX;
-      lastY = e.clientY;
-    });
-
-    window.addEventListener("pointermove", (e) => {
-      if (!dragging) return;
-      const dx = e.clientX - lastX;
-      const dy = e.clientY - lastY;
-      movedDist += Math.hypot(dx, dy);
-      lastX = e.clientX;
-      lastY = e.clientY;
-
-      this.desiredSpherical.theta -= dx * 0.0065;
-      this.desiredSpherical.phi = THREE.MathUtils.clamp(
-        this.desiredSpherical.phi - dy * 0.0055,
-        0.48,
-        1.25
-      );
-    });
-
-    window.addEventListener("pointerup", (e) => {
-      if (!dragging) return;
-      dragging = false;
-      if (movedDist < 10) {
-        const rect = this.canvas.getBoundingClientRect();
-        pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-        pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-        raycaster.setFromCamera(pointer, this.camera);
-        const hit = raycaster.intersectObject(this.riverMesh);
-        if (hit.length > 0) {
-          this.spawnSplash(hit[0].point.x, hit[0].point.y + 0.2, hit[0].point.z, 10);
-        } else {
-          this.spawnSplash(-1.2, 0.5, 2.0, 8);
-        }
-        if (this.onTapWorld) {
-          this.onTapWorld(e.clientX, e.clientY);
-        }
+      const rect = this.canvas.getBoundingClientRect();
+      pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+      raycaster.setFromCamera(pointer, this.camera);
+      const hit = raycaster.intersectObject(this.riverMesh);
+      if (hit.length > 0) {
+        this.spawnSplash(hit[0].point.x, hit[0].point.y + 0.2, hit[0].point.z, 10);
+      } else {
+        this.spawnSplash(-1.2, 0.5, 2.0, 8);
+      }
+      if (this.onTapWorld) {
+        this.onTapWorld(e.clientX, e.clientY);
       }
     });
-
-    this.canvas.addEventListener(
-      "wheel",
-      (e) => {
-        e.preventDefault();
-        this.desiredSpherical.radius = THREE.MathUtils.clamp(
-          this.desiredSpherical.radius + e.deltaY * 0.015,
-          11,
-          36
-        );
-      },
-      { passive: false }
-    );
   }
 
   resize() {
@@ -600,18 +574,10 @@ export class WaterPowerWorld {
     const { totalWatts, overdriveMult } = getTotals(state);
     const flowSpeed = (1 + state.upgrades.riverFlow * 0.14) * overdriveMult;
 
-    // Smooth camera
-    this.spherical.theta += (this.desiredSpherical.theta - this.spherical.theta) * 0.12;
-    this.spherical.phi += (this.desiredSpherical.phi - this.spherical.phi) * 0.12;
-    this.spherical.radius += (this.desiredSpherical.radius - this.spherical.radius) * 0.12;
+    // Smooth preset camera transition
+    this.cameraPos.lerp(this.desiredCameraPos, 0.12);
     this.targetOffset.lerp(this.desiredTarget, 0.12);
-
-    const { radius, phi, theta } = this.spherical;
-    this.camera.position.set(
-      this.targetOffset.x + radius * Math.sin(phi) * Math.sin(theta),
-      this.targetOffset.y + radius * Math.cos(phi),
-      this.targetOffset.z + radius * Math.sin(phi) * Math.cos(theta)
-    );
+    this.camera.position.copy(this.cameraPos);
     this.camera.lookAt(this.targetOffset);
 
     // Animate river waves
@@ -647,7 +613,8 @@ export class WaterPowerWorld {
         node.pad.visible = false;
         node.model.visible = true;
         node.scaleAnim = Math.min(1, node.scaleAnim + dt * 3.5);
-        const s = 1 - Math.pow(1 - node.scaleAnim, 3);
+        node.pulseBoost = Math.max(0, (node.pulseBoost || 0) - dt * 2.8);
+        const s = (1 - Math.pow(1 - node.scaleAnim, 3)) * (1 + node.pulseBoost * 0.12);
         node.model.scale.setScalar(s);
 
         const spinSpeed = (1.6 + Math.min(6, st.level * 0.06)) * flowSpeed;

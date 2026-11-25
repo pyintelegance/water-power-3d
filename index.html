@@ -26,7 +26,7 @@
         <span class="stat-icon">💧</span>
         <div class="stat-text">
           <div class="stat-main" id="hud-cash">$0</div>
-          <div class="stat-sub" id="hud-income">+$0/с</div>
+          <div class="stat-sub" id="hud-income">+$0/с · добыча с ГЭС</div>
         </div>
       </div>
 
@@ -38,23 +38,39 @@
         </div>
       </div>
 
-      <div class="hud-actions">
-        <button class="icon-btn" id="btn-cam" title="Сменить камеру" aria-label="Сменить камеру">🎥</button>
-        <button class="icon-btn" id="btn-sound" title="Звук" aria-label="Звук">🔊</button>
-      </div>
+      <button class="icon-btn" id="btn-sound" title="Звук" aria-label="Звук">🔊</button>
     </header>
 
-    <!-- Overdrive / Tap Meter -->
-    <div class="overdrive-wrap">
+    <!-- Grand Goal Progress Bar -->
+    <div class="goal-banner" id="goal-banner">
+      <div class="goal-head">
+        <span class="goal-title" id="goal-title">🎯 ЦЕЛЬ: Зажечь свет в деревне</span>
+        <span class="goal-numbers" id="goal-numbers">10 / 120 W</span>
+      </div>
+      <div class="goal-track">
+        <div class="goal-fill" id="goal-fill"></div>
+      </div>
+      <div class="goal-sub" id="goal-sub">Награда: +$95 · появятся первые дома</div>
+    </div>
+
+    <!-- Overdrive / Tap Meter + Camera View Buttons -->
+    <div class="mid-controls">
       <div class="overdrive-bar">
         <div class="overdrive-fill" id="overdrive-fill"></div>
-        <span class="overdrive-label" id="overdrive-label">⚡ НАЖМИ НА ВОДУ ДЛЯ УСКОРЕНИЯ (x1.0)</span>
+        <span class="overdrive-label" id="overdrive-label">⚡ ТАПАЙ ПО ВОДЕ ДЛЯ РАЗГОНА (x1.0)</span>
+      </div>
+
+      <div class="cam-bar" role="group" aria-label="Выбор вида камеры">
+        <button class="cam-btn active" data-cam="0">🌍 Обзор</button>
+        <button class="cam-btn" data-cam="1">🎡 Станции</button>
+        <button class="cam-btn" data-cam="2">🏗️ Плотина</button>
+        <button class="cam-btn" data-cam="3">🏙️ Город</button>
       </div>
     </div>
 
-    <!-- City Evolution Toast -->
+    <!-- Goal / Era Toast -->
     <div class="era-toast hidden" id="era-toast">
-      <span class="era-toast-badge">НОВАЯ ЭРА ГОРОДА!</span>
+      <span class="era-toast-badge" id="era-toast-badge">ЦЕЛЬ ДОСТИГНУТА!</span>
       <strong id="era-toast-title">Деревня у воды</strong>
     </div>
 

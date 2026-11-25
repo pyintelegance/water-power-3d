@@ -6,15 +6,19 @@ import {
   applyTap,
   buyStationAction,
   buyUpgradeAction,
+  checkAndClaimGoals,
   computePendingEngineers,
   formatCompact,
   formatWatts,
   getBulkStationCost,
   getCityEraIndex,
+  getCurrentGoalProgress,
   getMaxAffordableStationLevels,
   getStationOutput,
+  getStationUpgradePreview,
   getTotals,
   getUpgradeCost,
+  getUpgradeEffectText,
   loadState,
   saveState,
   tickEconomy,
@@ -30,6 +34,7 @@ let activeTab = "stations";
 let buyMult = "x1";
 let lastEraIndex = getCityEraIndex(getTotals(state).totalWatts);
 let eraToastTimer = null;
+let lastStationFloatAt = 0;
 
 // DOM refs
 const canvas = document.getElementById("game-canvas");
@@ -38,15 +43,19 @@ const hudCash = document.getElementById("hud-cash");
 const hudIncome = document.getElementById("hud-income");
 const hudWatts = document.getElementById("hud-watts");
 const hudEra = document.getElementById("hud-era");
+const goalTitle = document.getElementById("goal-title");
+const goalNumbers = document.getElementById("goal-numbers");
+const goalFill = document.getElementById("goal-fill");
+const goalSub = document.getElementById("goal-sub");
 const overdriveFill = document.getElementById("overdrive-fill");
 const overdriveLabel = document.getElementById("overdrive-label");
 const cardsList = document.getElementById("cards-list");
 const drawer = document.getElementById("drawer");
 const btnBuyMult = document.getElementById("btn-buy-mult");
 const btnCollapse = document.getElementById("btn-collapse");
-const btnCam = document.getElementById("btn-cam");
 const btnSound = document.getElementById("btn-sound");
 const eraToast = document.getElementById("era-toast");
+const eraToastBadge = document.getElementById("era-toast-badge");
 const eraToastTitle = document.getElementById("era-toast-title");
 const offlineModal = document.getElementById("offline-modal");
 const offlineTime = document.getElementById("offline-time");
@@ -60,16 +69,35 @@ function spawnTapText(x, y, amount) {
   el.style.left = `${x}px`;
   el.style.top = `${y}px`;
   tapFxLayer.appendChild(el);
-  setTimeout(() => el.remove(), 860);
+  setTimeout(() => el.remove(), 840);
 }
 
-function showEraToast(eraName) {
-  eraToastTitle.textContent = eraName;
+function spawnStationIncomePopup(stationId, amount) {
+  const now = performance.now();
+  if (now - lastStationFloatAt < 180) return;
+  const pos = world.getStationScreenPosition(stationId);
+  if (!pos) return;
+  const drawerTop = drawer.getBoundingClientRect().top;
+  if (pos.y < 140 || pos.y > drawerTop - 16) return;
+  lastStationFloatAt = now;
+
+  const el = document.createElement("div");
+  el.className = "station-float";
+  el.textContent = `+${formatCompact(amount, "$")} ⚡`;
+  el.style.left = `${pos.x}px`;
+  el.style.top = `${pos.y}px`;
+  tapFxLayer.appendChild(el);
+  setTimeout(() => el.remove(), 1060);
+}
+
+function showBannerToast(badge, title) {
+  eraToastBadge.textContent = badge;
+  eraToastTitle.textContent = title;
   eraToast.classList.remove("hidden");
   clearTimeout(eraToastTimer);
   eraToastTimer = setTimeout(() => {
     eraToast.classList.add("hidden");
-  }, 2800);
+  }, 3000);
 }
 
 const world = new WaterPowerWorld(canvas, (x, y) => {
@@ -93,7 +121,7 @@ function renderCards() {
 
       if (!st.unlocked) {
         cost = def.unlockCost;
-        actionLabel = "Открыть";
+        actionLabel = "Построить";
       } else if (buyMult === "x10") {
         buyCount = 10;
         cost = getBulkStationCost(def, st.level, 10);
@@ -107,8 +135,15 @@ function renderCards() {
         actionLabel = "+1 ур.";
       }
 
+      const preview = getStationUpgradePreview(state, def, buyCount);
+      const milestoneNote =
+        st.unlocked && preview.nextMilestone
+          ? ` · x2 на ур.${preview.nextMilestone}`
+          : "";
+
       const card = document.createElement("div");
       card.className = `card${st.unlocked ? "" : " locked"}`;
+      card.dataset.stationCard = def.id;
       card.innerHTML = `
         <div class="card-left">
           <div class="card-emoji">${def.icon}</div>
@@ -120,10 +155,25 @@ function renderCards() {
             <div class="card-meta">
               ${
                 st.unlocked
-                  ? `+${formatCompact(out.incomePerSec, "$")}/с · ${formatWatts(out.watts)}`
+                  ? `Добыча: +${formatCompact(out.incomePerSec, "$")}/с · ${formatWatts(out.watts)}`
                   : def.desc
               }
             </div>
+            <div class="card-delta">
+              ${
+                st.unlocked
+                  ? `Апгрейд даст: +${formatCompact(preview.deltaIncome, "$")}/с (+${formatWatts(preview.deltaWatts)})${milestoneNote}`
+                  : `Запуск даст: +${formatCompact(preview.deltaIncome, "$")}/с и ${formatWatts(preview.deltaWatts)}`
+              }
+            </div>
+            ${
+              st.unlocked
+                ? `<div class="cycle-row">
+                    <div class="cycle-track"><div class="cycle-fill" data-cycle="${def.id}" style="width:${Math.round((st.cycleProgress || 0) * 100)}%"></div></div>
+                    <span class="cycle-mined" data-mined="${def.id}">Добыто: ${formatCompact(st.totalMined || 0, "$")}</span>
+                  </div>`
+                : ""
+            }
           </div>
         </div>
         <button class="buy-btn" data-action="station" data-id="${def.id}" data-cost="${cost}">
@@ -138,6 +188,7 @@ function renderCards() {
       const lvl = state.upgrades[up.id] || 0;
       const isMax = lvl >= up.maxLevel;
       const cost = isMax ? 0 : getUpgradeCost(up, lvl);
+      const effectText = isMax ? "Максимальный уровень достигнут" : getUpgradeEffectText(state, up);
 
       const card = document.createElement("div");
       card.className = "card";
@@ -149,7 +200,8 @@ function renderCards() {
               <span>${up.name}</span>
               <span class="lvl-badge">${lvl}/${up.maxLevel}</span>
             </div>
-            <div class="card-meta">${up.desc}</div>
+            <div class="card-meta">${up.targetLabel}</div>
+            <div class="card-delta">${effectText}</div>
           </div>
         </div>
         <button class="buy-btn" data-action="upgrade" data-id="${up.id}" data-cost="${cost}" ${isMax ? "disabled" : ""}>
@@ -168,7 +220,7 @@ function renderCards() {
     hero.className = "prestige-hero";
     hero.innerHTML = `
       <h3>👷 Главные инженеры</h3>
-      <p>Перезапустите станцию, чтобы нанять инженеров. Каждый инженер даёт <strong>+50%</strong> к доходу навсегда. От 2 инженеров включается авто-турбо!</p>
+      <p>Расширяйте сеть: перезапуск даёт инженеров, которые навсегда увеличивают добычу всех станций на <strong>+50%</strong> за каждого. От 2 инженеров работает авто-турбо.</p>
       <div class="prestige-stats">
         <span>Сейчас: <strong>${state.engineers}</strong> (+${currentBonus}%)</span>
         <span>Доступно: <strong>+${pending}</strong> (+${nextBonus}%)</span>
@@ -199,10 +251,26 @@ function refreshButtonStates() {
   }
 }
 
+function refreshMiningBars() {
+  if (activeTab !== "stations") return;
+  for (const def of STATION_DEFS) {
+    const st = state.stations[def.id];
+    if (!st || !st.unlocked) continue;
+    const fill = cardsList.querySelector(`.cycle-fill[data-cycle="${def.id}"]`);
+    const mined = cardsList.querySelector(`.cycle-mined[data-mined="${def.id}"]`);
+    if (fill) {
+      fill.style.width = `${Math.round((st.cycleProgress || 0) * 100)}%`;
+    }
+    if (mined) {
+      mined.textContent = `Добыто: ${formatCompact(st.totalMined || 0, "$")}`;
+    }
+  }
+}
+
 function updateHudAndButtons() {
   const totals = getTotals(state);
   hudCash.textContent = formatCompact(state.cash, "$");
-  hudIncome.textContent = `+${formatCompact(totals.effectiveIncomePerSec, "$")}/с`;
+  hudIncome.textContent = `+${formatCompact(totals.effectiveIncomePerSec, "$")}/с · от ГЭС`;
   hudWatts.textContent = formatWatts(totals.totalWatts);
 
   const eraIdx = getCityEraIndex(totals.totalWatts);
@@ -210,9 +278,32 @@ function updateHudAndButtons() {
   if (eraIdx > lastEraIndex) {
     lastEraIndex = eraIdx;
     sound.playUnlock();
-    showEraToast(CITY_ERAS[eraIdx].name);
+    showBannerToast("НОВАЯ ЭРА ГОРОДА!", CITY_ERAS[eraIdx].name);
   } else if (eraIdx < lastEraIndex) {
     lastEraIndex = eraIdx;
+  }
+
+  const claimed = checkAndClaimGoals(state);
+  if (claimed.length > 0) {
+    const lastGoal = claimed[claimed.length - 1];
+    sound.playUnlock();
+    showBannerToast(
+      `ЦЕЛЬ ВЫПОЛНЕНА! +${formatCompact(lastGoal.rewardCash, "$")}`,
+      lastGoal.title
+    );
+  }
+
+  const goalInfo = getCurrentGoalProgress(state);
+  if (goalInfo.completedAll) {
+    goalTitle.textContent = "🏆 ВСЕ ЦЕЛИ ВЫПОЛНЕНЫ!";
+    goalNumbers.textContent = formatWatts(goalInfo.currentWatts);
+    goalFill.style.width = "100%";
+    goalSub.textContent = "Ваш город полностью работает на энергии воды!";
+  } else {
+    goalTitle.textContent = `🎯 ЦЕЛЬ ${goalInfo.index + 1}/${goalInfo.totalGoals}: ${goalInfo.goal.title}`;
+    goalNumbers.textContent = `${formatWatts(goalInfo.currentWatts)} / ${formatWatts(goalInfo.goal.targetWatts)}`;
+    goalFill.style.width = `${goalInfo.percent.toFixed(1)}%`;
+    goalSub.textContent = `Награда: +${formatCompact(goalInfo.goal.rewardCash, "$")} · ${goalInfo.goal.subtitle}`;
   }
 
   const pct = Math.round(state.overdrive * 100);
@@ -220,12 +311,13 @@ function updateHudAndButtons() {
   overdriveLabel.textContent =
     state.overdrive > 0.02
       ? `⚡ ТУРБО НАПОР x${totals.overdriveMult.toFixed(1)}`
-      : "⚡ НАЖМИ НА ВОДУ ДЛЯ УСКОРЕНИЯ (x1.0)";
+      : "⚡ ТАПАЙ ПО ВОДЕ ДЛЯ РАЗГОНА (x1.0)";
 
   if (activeTab === "stations" && buyMult === "MAX") {
     renderCards();
   } else {
     refreshButtonStates();
+    refreshMiningBars();
   }
 }
 
@@ -242,6 +334,7 @@ cardsList.addEventListener("click", (e) => {
     if (buyStationAction(state, id, buyMult)) {
       if (!wasUnlocked) sound.playUnlock();
       else sound.playBuy();
+      world.triggerStationPulse(id);
       saveState(state);
       renderCards();
       updateHudAndButtons();
@@ -261,6 +354,16 @@ cardsList.addEventListener("click", (e) => {
       updateHudAndButtons();
     }
   }
+});
+
+document.querySelector(".cam-bar").addEventListener("click", (e) => {
+  const btn = e.target.closest(".cam-btn");
+  if (!btn) return;
+  const camIdx = Number(btn.dataset.cam || 0);
+  world.setCameraPreset(camIdx);
+  document.querySelectorAll(".cam-btn").forEach((b) => {
+    b.classList.toggle("active", b === btn);
+  });
 });
 
 document.querySelector(".tabs").addEventListener("click", (e) => {
@@ -283,11 +386,6 @@ btnBuyMult.addEventListener("click", () => {
 
 btnCollapse.addEventListener("click", () => {
   drawer.classList.toggle("collapsed");
-});
-
-btnCam.addEventListener("click", () => {
-  const name = world.cycleCameraPreset();
-  btnCam.title = `Камера: ${name}`;
 });
 
 btnSound.addEventListener("click", () => {
@@ -323,11 +421,16 @@ function frame(now) {
   const dt = (now - lastFrameTime) / 1000;
   lastFrameTime = now;
 
-  tickEconomy(state, dt);
+  const payouts = tickEconomy(state, dt);
   world.render(state);
 
+  for (const p of payouts) {
+    world.triggerStationPulse(p.stationId);
+    spawnStationIncomePopup(p.stationId, p.amount);
+  }
+
   uiAccumulator += dt;
-  if (uiAccumulator >= 0.12) {
+  if (uiAccumulator >= 0.08) {
     uiAccumulator = 0;
     updateHudAndButtons();
   }
@@ -347,6 +450,7 @@ requestAnimationFrame(frame);
 
 window.__WATER_POWER_DEBUG__ = {
   state,
+  world,
   getTotals: () => getTotals(state),
   grantCash: (amt) => {
     state.cash += amt;
