@@ -3,21 +3,21 @@ import {
   ACHIEVEMENT_DEFS,
   AVATAR_CHOICES,
   BOOSTER_DEFS,
-  CITY_ERAS,
   SHOP_PERK_DEFS,
-  STATION_DEFS,
-  UPGRADE_DEFS,
   ZONES,
+  advanceToNextZone,
   applyTap,
   buyBoosterAction,
   buyShopPerkAction,
   buyStationAction,
   buyUpgradeAction,
+  canAdvanceZone,
   checkAchievements,
   checkAndClaimGoals,
   computePendingEngineers,
   formatCompact,
   formatWatts,
+  getActiveZone,
   getBoosterCashCost,
   getBulkStationCost,
   getCityEraIndex,
@@ -30,9 +30,10 @@ import {
   getTotals,
   getUpgradeCost,
   getUpgradeEffectText,
+  getZoneStations,
+  getZoneUpgrades,
   loadState,
   saveState,
-  switchZone,
   tickEconomy,
   triggerPrestige
 } from "./economy.js";
@@ -55,10 +56,11 @@ void platform;
 
 let activeTab = "stations";
 let buyMult = "x1";
-let lastEraIndex = getCityEraIndex(getTotals(state).totalWatts);
+let lastEraIndex = getCityEraIndex(state, getTotals(state).totalWatts);
 let eraToastTimer = null;
 let lastStationFloatAt = 0;
 let autoTapAcc = 0;
+let lastZoneStripSig = "";
 
 // DOM refs
 const canvas = document.getElementById("game-canvas");
@@ -73,6 +75,7 @@ const goalTitle = document.getElementById("goal-title");
 const goalNumbers = document.getElementById("goal-numbers");
 const goalFill = document.getElementById("goal-fill");
 const goalSub = document.getElementById("goal-sub");
+const btnAdvanceZone = document.getElementById("btn-advance-zone");
 const zoneStrip = document.getElementById("zone-strip");
 const btnGoalCollapse = document.getElementById("btn-goal-collapse");
 const overdriveFill = document.getElementById("overdrive-fill");
@@ -95,6 +98,12 @@ const profileNameInput = document.getElementById("profile-name-input");
 const profileRank = document.getElementById("profile-rank");
 const profileStatsGrid = document.getElementById("profile-stats-grid");
 const achList = document.getElementById("ach-list");
+const zoneModal = document.getElementById("zone-modal");
+const zoneModalEmoji = document.getElementById("zone-modal-emoji");
+const zoneModalTitle = document.getElementById("zone-modal-title");
+const zoneModalDesc = document.getElementById("zone-modal-desc");
+const btnCancelZone = document.getElementById("btn-cancel-zone");
+const btnConfirmZone = document.getElementById("btn-confirm-zone");
 const offlineModal = document.getElementById("offline-modal");
 const offlineTime = document.getElementById("offline-time");
 const offlineReward = document.getElementById("offline-reward");
@@ -146,26 +155,46 @@ const world = new WaterPowerWorld(canvas, (x, y) => {
 });
 
 function renderZoneStrip() {
+  const curZone = getActiveZone(state);
+  const readyNext = canAdvanceZone(state);
+  const sig = `${state.activeZoneId}|${(state.completedZones || []).join(",")}|${readyNext?.id || ""}`;
+  if (sig === lastZoneStripSig) return;
+  lastZoneStripSig = sig;
   zoneStrip.innerHTML = "";
+
   for (const z of ZONES) {
-    const unlocked = state.unlockedZones.includes(z.id);
-    const active = state.activeZoneId === z.id;
-    const chip = document.createElement("button");
-    chip.className = `zone-chip${active ? " active" : ""}${unlocked ? "" : " locked"}`;
-    chip.dataset.zoneId = z.id;
-    chip.disabled = !unlocked;
-    chip.textContent = unlocked
-      ? `${z.icon} ${z.name} (x${z.incomeMult})`
-      : `🔒 ${z.name} (${formatWatts(z.unlockWatts)})`;
+    const isCurrent = state.activeZoneId === z.id;
+    const isCompleted = state.completedZones?.includes(z.id);
+    const chip = document.createElement("div");
+
+    if (isCurrent) {
+      chip.className = "zone-chip active";
+      chip.textContent = `${z.icon} ${z.name} (x${z.incomeMult})`;
+    } else if (isCompleted) {
+      chip.className = "zone-chip";
+      chip.textContent = `✅ ${z.name}`;
+    } else if (readyNext && readyNext.id === z.id) {
+      chip.className = "zone-chip active";
+      chip.textContent = `🚀 ${z.name} — Готово!`;
+    } else {
+      chip.className = "zone-chip locked";
+      const reqText =
+        z.index === curZone.index + 1 && curZone.nextZoneTargetWatts
+          ? formatWatts(curZone.nextZoneTargetWatts)
+          : "Далее";
+      chip.textContent = `🔒 ${z.name} (${reqText})`;
+    }
     zoneStrip.appendChild(chip);
   }
 }
 
 function renderCards() {
   cardsList.innerHTML = "";
+  const zoneStations = getZoneStations(state.activeZoneId);
+  const zoneUpgrades = getZoneUpgrades(state.activeZoneId);
 
   if (activeTab === "stations") {
-    for (const def of STATION_DEFS) {
+    for (const def of zoneStations) {
       const st = state.stations[def.id];
       const out = getStationOutput(state, def);
 
@@ -204,27 +233,24 @@ function renderCards() {
               <span class="lvl-badge">${st.unlocked ? `Ур. ${st.level}` : "Закрыто"}</span>
             </div>
             <div class="card-meta">
-              ${
-                st.unlocked
-                  ? `Добыча: +${formatCompact(out.incomePerSec, "$")}/с · ${formatWatts(out.watts)}`
-                  : def.desc
-              }
+              ${st.unlocked
+          ? `Добыча: +${formatCompact(out.incomePerSec, "$")}/с · ${formatWatts(out.watts)}`
+          : def.desc
+        }
             </div>
             <div class="card-delta">
-              ${
-                st.unlocked
-                  ? `Апгрейд: +${formatCompact(preview.deltaIncome, "$")}/с (+${formatWatts(preview.deltaWatts)})${milestoneNote}`
-                  : `Запуск: +${formatCompact(preview.deltaIncome, "$")}/с и ${formatWatts(preview.deltaWatts)}`
-              }
+              ${st.unlocked
+          ? `Апгрейд: +${formatCompact(preview.deltaIncome, "$")}/с (+${formatWatts(preview.deltaWatts)})${milestoneNote}`
+          : `Запуск: +${formatCompact(preview.deltaIncome, "$")}/с и ${formatWatts(preview.deltaWatts)}`
+        }
             </div>
-            ${
-              st.unlocked
-                ? `<div class="cycle-row">
+            ${st.unlocked
+          ? `<div class="cycle-row">
                     <div class="cycle-track"><div class="cycle-fill" data-cycle="${def.id}" style="width:${Math.round((st.cycleProgress || 0) * 100)}%"></div></div>
                     <span class="cycle-mined" data-mined="${def.id}">Добыто: ${formatCompact(st.totalMined || 0, "$")}</span>
                   </div>`
-                : ""
-            }
+          : ""
+        }
           </div>
         </div>
         <button class="buy-btn" data-action="station" data-id="${def.id}" data-cost="${cost}">
@@ -235,7 +261,7 @@ function renderCards() {
       cardsList.appendChild(card);
     }
   } else if (activeTab === "upgrades") {
-    for (const up of UPGRADE_DEFS) {
+    for (const up of zoneUpgrades) {
       const lvl = state.upgrades[up.id] || 0;
       const isMax = lvl >= up.maxLevel;
       const cost = isMax ? 0 : getUpgradeCost(up, lvl);
@@ -285,14 +311,13 @@ function renderCards() {
           </div>
         </div>
         <div class="btn-stack">
-          ${
-            cashCost !== null
-              ? `<button class="buy-btn" data-action="booster-cash" data-id="${b.id}" data-cost="${cashCost}">
+          ${cashCost !== null
+          ? `<button class="buy-btn" data-action="booster-cash" data-id="${b.id}" data-cost="${cashCost}">
                   <span>${formatCompact(cashCost, "$")}</span>
                   <span class="buy-action">Активировать</span>
                 </button>`
-              : ""
-          }
+          : ""
+        }
           <button class="buy-btn crystal-btn" data-action="booster-crystal" data-id="${b.id}" data-crystal-cost="${b.crystalCost}">
             <span>💎 ${b.crystalCost}</span>
             <span class="buy-action">За кристаллы</span>
@@ -304,7 +329,7 @@ function renderCards() {
 
     const pHeader = document.createElement("div");
     pHeader.className = "shop-section-title";
-    pHeader.textContent = "💎 Постоянные улучшения (за кристаллы)";
+    pHeader.textContent = "💎 Постоянные улучшения (работают во всех локациях)";
     cardsList.appendChild(pHeader);
 
     for (const perk of SHOP_PERK_DEFS) {
@@ -335,19 +360,20 @@ function renderCards() {
     const pending = computePendingEngineers(state);
     const currentBonus = state.engineers * 50;
     const nextBonus = (state.engineers + pending) * 50;
+    const reqCash = formatCompact(50000 * getActiveZone(state).incomeMult, "$");
 
     const hero = document.createElement("div");
     hero.className = "prestige-hero";
     hero.innerHTML = `
       <h3>👷 Главные инженеры</h3>
-      <p>Расширяйте сеть: перезапуск даёт инженеров, которые навсегда увеличивают добычу всех станций на <strong>+50%</strong> за каждого. Зоны, кристаллы и покупки магазина сохраняются!</p>
+      <p>Нанимайте инженеров: каждый даёт <strong>+50%</strong> к доходу во всех локациях навсегда. От 2 инженеров работает авто-турбо.</p>
       <div class="prestige-stats">
         <span>Сейчас: <strong>${state.engineers}</strong> (+${currentBonus}%)</span>
         <span>Доступно: <strong>+${pending}</strong> (+${nextBonus}%)</span>
       </div>
       <button class="buy-btn ${pending > 0 ? "can-afford" : "cannot-afford"}" style="width:100%" data-action="prestige" ${pending <= 0 ? "disabled" : ""}>
-        <span>${pending > 0 ? `Нанять +${pending} инж.` : "Нужно $50K за забег"}</span>
-        <span class="buy-action">Сброс и расширение</span>
+        <span>${pending > 0 ? `Нанять +${pending} инж.` : `Нужно ${reqCash} за забег`}</span>
+        <span class="buy-action">Сброс и усиление</span>
       </button>
     `;
     cardsList.appendChild(hero);
@@ -383,7 +409,7 @@ function refreshButtonStates() {
 
 function refreshMiningBars() {
   if (activeTab !== "stations") return;
-  for (const def of STATION_DEFS) {
+  for (const def of getZoneStations(state.activeZoneId)) {
     const st = state.stations[def.id];
     if (!st || !st.unlocked) continue;
     const fill = cardsList.querySelector(`.cycle-fill[data-cycle="${def.id}"]`);
@@ -395,15 +421,9 @@ function refreshMiningBars() {
 
 function renderActiveBoostersHud() {
   const pills = [];
-  if ((state.boosters?.turbo_3x || 0) > 0) {
-    pills.push(`🚀 x3: ${Math.ceil(state.boosters.turbo_3x)}с`);
-  }
-  if ((state.boosters?.rain_2x || 0) > 0) {
-    pills.push(`🌧️ x2: ${Math.ceil(state.boosters.rain_2x)}с`);
-  }
-  if ((state.boosters?.auto_tap || 0) > 0) {
-    pills.push(`🤖 Авто: ${Math.ceil(state.boosters.auto_tap)}с`);
-  }
+  if ((state.boosters?.turbo_3x || 0) > 0) pills.push(`🚀 x3: ${Math.ceil(state.boosters.turbo_3x)}с`);
+  if ((state.boosters?.rain_2x || 0) > 0) pills.push(`🌧️ x2: ${Math.ceil(state.boosters.rain_2x)}с`);
+  if ((state.boosters?.auto_tap || 0) > 0) pills.push(`🤖 Авто: ${Math.ceil(state.boosters.auto_tap)}с`);
   if (pills.length === 0) {
     activeBoostersEl.classList.add("hidden");
     activeBoostersEl.innerHTML = "";
@@ -415,7 +435,6 @@ function renderActiveBoostersHud() {
 
 function renderProfileModal() {
   btnProfile.textContent = state.profile.avatar || "👷";
-
   avatarPicker.innerHTML = "";
   for (const av of AVATAR_CHOICES) {
     const btn = document.createElement("button");
@@ -434,7 +453,7 @@ function renderProfileModal() {
   profileStatsGrid.innerHTML = `
     <div class="pstat"><div class="pstat-label">Всего заработано</div><div class="pstat-val">${formatCompact(state.lifetimeCash, "$")}</div></div>
     <div class="pstat"><div class="pstat-label">Мощность сейчас</div><div class="pstat-val">${formatWatts(totals.totalWatts)}</div></div>
-    <div class="pstat"><div class="pstat-label">Открыто зон</div><div class="pstat-val">${state.unlockedZones.length} / ${ZONES.length}</div></div>
+    <div class="pstat"><div class="pstat-label">Локация</div><div class="pstat-val">${getActiveZone(state).icon} ${getActiveZone(state).name}</div></div>
     <div class="pstat"><div class="pstat-label">Тапов по воде</div><div class="pstat-val">${state.profile.totalTaps || 0}</div></div>
     <div class="pstat"><div class="pstat-label">Инженеры</div><div class="pstat-val">${state.engineers}</div></div>
     <div class="pstat"><div class="pstat-label">Время в игре</div><div class="pstat-val">${mins}м ${secs}с</div></div>
@@ -456,7 +475,17 @@ function renderProfileModal() {
   }
 }
 
+function openZoneTransitionModal() {
+  const nextZone = canAdvanceZone(state);
+  if (!nextZone) return;
+  zoneModalEmoji.textContent = `${nextZone.icon}🚀`;
+  zoneModalTitle.textContent = `Переход: ${nextZone.name}`;
+  zoneModalDesc.textContent = `${nextZone.desc}. Бонус за переход: +${nextZone.rewardCrystals} 💎 и доход x${nextZone.incomeMult}!`;
+  zoneModal.classList.remove("hidden");
+}
+
 function updateHudAndButtons() {
+  const curZone = getActiveZone(state);
   const totals = getTotals(state);
   hudCash.textContent = formatCompact(state.cash, "$");
   hudIncome.textContent = `+${formatCompact(totals.effectiveIncomePerSec, "$")}/с`;
@@ -464,12 +493,12 @@ function updateHudAndButtons() {
   hudCrystals.textContent = `💎 ${state.crystals || 0}`;
   btnProfile.textContent = state.profile.avatar || "👷";
 
-  const eraIdx = getCityEraIndex(totals.totalWatts);
-  hudEra.textContent = CITY_ERAS[eraIdx].name;
+  const eraIdx = getCityEraIndex(state, totals.totalWatts);
+  hudEra.textContent = curZone.eras[eraIdx].name;
   if (eraIdx > lastEraIndex) {
     lastEraIndex = eraIdx;
     sound.playUnlock();
-    showBannerToast("НОВАЯ ЭРА ГОРОДА!", CITY_ERAS[eraIdx].name);
+    showBannerToast("НОВАЯ ЭРА ГОРОДА!", curZone.eras[eraIdx].name);
   } else if (eraIdx < lastEraIndex) {
     lastEraIndex = eraIdx;
   }
@@ -478,7 +507,6 @@ function updateHudAndButtons() {
   if (claimed.length > 0) {
     const lastGoal = claimed[claimed.length - 1];
     sound.playUnlock();
-    renderZoneStrip();
     showBannerToast(
       `ЦЕЛЬ ВЫПОЛНЕНА! +${formatCompact(lastGoal.rewardCash, "$")} · +${lastGoal.rewardCrystals || 0} 💎`,
       lastGoal.title
@@ -492,17 +520,28 @@ function updateHudAndButtons() {
   }
 
   const goalInfo = getCurrentGoalProgress(state);
-  if (goalInfo.completedAll) {
-    goalTitle.textContent = "🏆 ВСЕ ЦЕЛИ ВЫПОЛНЕНЫ!";
+  const readyNext = canAdvanceZone(state);
+
+  if (readyNext) {
+    btnAdvanceZone.classList.remove("hidden");
+    btnAdvanceZone.textContent = `🚀 Перейти в «${readyNext.name}» (доход x${readyNext.incomeMult} · +${readyNext.rewardCrystals} 💎)`;
+  } else {
+    btnAdvanceZone.classList.add("hidden");
+  }
+
+  if (goalInfo.completedAll && !readyNext) {
+    goalTitle.textContent = `🏆 ${curZone.name}: все цели пройдены!`;
     goalNumbers.textContent = formatWatts(goalInfo.currentWatts);
     goalFill.style.width = "100%";
-    goalSub.textContent = "Все зоны открыты — абсолютная гидро-империя!";
+    goalSub.textContent = "Вы достигли вершины энергетической империи!";
   } else {
-    goalTitle.textContent = `🎯 ЦЕЛЬ ${goalInfo.index + 1}/${goalInfo.totalGoals}: ${goalInfo.goal.title}`;
+    goalTitle.textContent = `🎯 ${curZone.icon} ЦЕЛЬ ${goalInfo.index + 1}/${goalInfo.totalGoals}: ${goalInfo.goal.title}`;
     goalNumbers.textContent = `${formatWatts(goalInfo.currentWatts)} / ${formatWatts(goalInfo.goal.targetWatts)}`;
     goalFill.style.width = `${goalInfo.percent.toFixed(1)}%`;
     goalSub.textContent = `Награда: +${formatCompact(goalInfo.goal.rewardCash, "$")} · +${goalInfo.goal.rewardCrystals || 0} 💎`;
   }
+
+  renderZoneStrip();
 
   const pct = Math.round(state.overdrive * 100);
   overdriveFill.style.width = `${pct}%`;
@@ -569,23 +608,25 @@ cardsList.addEventListener("click", (e) => {
     if (triggerPrestige(state) > 0) {
       sound.playUnlock();
       saveState(state);
-      renderZoneStrip();
       renderCards();
       updateHudAndButtons();
     }
   }
 });
 
-zoneStrip.addEventListener("click", (e) => {
-  const chip = e.target.closest(".zone-chip");
-  if (!chip || chip.disabled) return;
-  if (switchZone(state, chip.dataset.zoneId)) {
+btnAdvanceZone.addEventListener("click", openZoneTransitionModal);
+btnCancelZone.addEventListener("click", () => zoneModal.classList.add("hidden"));
+btnConfirmZone.addEventListener("click", () => {
+  const nextZone = advanceToNextZone(state);
+  if (nextZone) {
+    zoneModal.classList.add("hidden");
+    lastEraIndex = 0;
     sound.playUnlock();
     world.setZoneTheme(state.activeZoneId);
-    renderZoneStrip();
+    showBannerToast(`НОВАЯ ЛОКАЦИЯ x${nextZone.incomeMult}!`, `${nextZone.icon} ${nextZone.name}`);
+    saveState(state);
     renderCards();
     updateHudAndButtons();
-    saveState(state);
   }
 });
 
@@ -632,20 +673,16 @@ btnBuyMult.addEventListener("click", () => {
   renderCards();
 });
 
-btnCollapse.addEventListener("click", () => {
-  drawer.classList.toggle("collapsed");
-});
+btnCollapse.addEventListener("click", () => drawer.classList.toggle("collapsed"));
 
 btnProfile.addEventListener("click", () => {
   renderProfileModal();
   profileModal.classList.remove("hidden");
 });
-
 btnCloseProfile.addEventListener("click", () => {
   profileModal.classList.add("hidden");
   saveState(state);
 });
-
 avatarPicker.addEventListener("click", (e) => {
   const opt = e.target.closest(".avatar-opt");
   if (!opt) return;
@@ -653,7 +690,6 @@ avatarPicker.addEventListener("click", (e) => {
   renderProfileModal();
   saveState(state);
 });
-
 profileNameInput.addEventListener("input", () => {
   state.profile.name = profileNameInput.value.trim() || "Гидро-Мастер";
 });
@@ -664,10 +700,8 @@ btnSound.addEventListener("click", () => {
   btnSound.textContent = !userMuted ? "🔊" : "🔇";
 });
 
-// PC Keyboard shortcuts (Space = tap, 1-4 = tabs, Q = cycle camera)
 window.addEventListener("keydown", (e) => {
   if (e.target && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")) return;
-
   if (e.code === "Space") {
     e.preventDefault();
     const earned = applyTap(state);
@@ -680,14 +714,12 @@ window.addEventListener("keydown", (e) => {
     updateHudAndButtons();
     return;
   }
-
   const tabMap = { Digit1: "stations", Digit2: "upgrades", Digit3: "shop", Digit4: "prestige" };
   if (tabMap[e.code]) {
     const targetBtn = document.querySelector(`.tab-btn[data-tab='${tabMap[e.code]}']`);
     if (targetBtn) targetBtn.click();
     return;
   }
-
   if (e.code === "KeyQ") {
     const camBtns = Array.from(document.querySelectorAll(".cam-btn"));
     const curIdx = camBtns.findIndex((b) => b.classList.contains("active"));
@@ -714,7 +746,6 @@ document.addEventListener("visibilitychange", () => {
 });
 window.addEventListener("pagehide", () => saveState(state));
 
-// Main loop
 let lastFrameTime = performance.now();
 let uiAccumulator = 0;
 let saveAccumulator = 0;
@@ -723,7 +754,6 @@ function frame(now) {
   const dt = (now - lastFrameTime) / 1000;
   lastFrameTime = now;
 
-  // Auto-tap booster drone
   if ((state.boosters?.auto_tap || 0) > 0) {
     autoTapAcc += dt;
     if (autoTapAcc >= 0.34) {
@@ -758,7 +788,6 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 
-renderZoneStrip();
 renderCards();
 updateHudAndButtons();
 requestAnimationFrame(frame);

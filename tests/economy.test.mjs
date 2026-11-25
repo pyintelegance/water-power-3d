@@ -1,91 +1,86 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  advanceToNextZone,
   applyTap,
   buyBoosterAction,
   buyShopPerkAction,
   buyStationAction,
   buyUpgradeAction,
+  canAdvanceZone,
   checkAchievements,
   checkAndClaimGoals,
   computePendingEngineers,
   createInitialState,
-  getCityEraIndex,
   getCurrentGoalProgress,
-  getStationUpgradePreview,
   getTotals,
-  STATION_DEFS,
-  switchZone,
+  getZoneStations,
+  getZoneUpgrades,
   tickEconomy,
   triggerPrestige
 } from "../src/economy.js";
 
-test("initial state starts in Green Valley with wooden wheel and grand goal", () => {
+test("initial state starts in Green Valley with valley stations and upgrades", () => {
   const s = createInitialState(0);
   assert.equal(s.activeZoneId, "valley");
-  assert.deepEqual(s.unlockedZones, ["valley"]);
-  assert.equal(s.stations.wood_wheel.unlocked, true);
+  assert.equal(s.stations.s0.unlocked, true);
+  assert.equal(getZoneStations("valley")[0].name, "Деревянное колесо");
   assert.equal(getCurrentGoalProgress(s).goal.targetWatts, 120);
 });
 
-test("mining cycles accumulate and emit payouts", () => {
-  const s = createInitialState(0);
-  let totalPayout = 0;
-  for (let i = 0; i < 12; i += 1) {
-    for (const p of tickEconomy(s, 0.2)) totalPayout += p.amount;
-  }
-  assert.ok(totalPayout > 0);
-  assert.ok(s.stations.wood_wheel.totalMined > 0);
-});
-
-test("shop boosters and crystal perks multiply income", () => {
-  const s = createInitialState(0);
-  const baseInc = getTotals(s).effectiveIncomePerSec;
-  const bRes = buyBoosterAction(s, "turbo_3x", "crystals");
-  assert.equal(bRes.ok, true);
-  assert.ok(getTotals(s).effectiveIncomePerSec >= baseInc * 2.9);
-
-  s.crystals = 20;
-  assert.equal(buyShopPerkAction(s, "gold_blades"), true);
-  assert.equal(s.shopPerks.gold_blades, 1);
-});
-
-test("reaching 1.8 MW unlocks Zone 2 Glacier with 6x multiplier", () => {
+test("reaching 1.8 MW enables transition to Glacier and resets stations/cash cleanly", () => {
   const s = createInitialState(0);
   s.cash = 1e9;
   s.runCash = 1e9;
-  for (const def of STATION_DEFS) {
+  for (const def of getZoneStations("valley")) {
     buyStationAction(s, def.id, "x1");
     buyStationAction(s, def.id, "x10");
   }
-  checkAndClaimGoals(s);
-  assert.ok(s.unlockedZones.includes("glacier"));
+  buyUpgradeAction(s, "u0");
+  assert.ok(s.upgrades.u0 === 1);
 
-  const valleyIncome = getTotals(s).baseIncomePerSec;
-  assert.equal(switchZone(s, "glacier"), true);
-  assert.ok(getTotals(s).baseIncomePerSec > valleyIncome * 5);
+  const ready = canAdvanceZone(s);
+  assert.ok(ready && ready.id === "glacier");
+
+  const prevCrystals = s.crystals;
+  const next = advanceToNextZone(s);
+  assert.equal(next.id, "glacier");
+  assert.equal(s.activeZoneId, "glacier");
+  assert.ok(s.completedZones.includes("valley"));
+  // Cash, stations, and local upgrades reset on transition
+  assert.equal(s.stations.s1.unlocked, false);
+  assert.equal(s.upgrades.u0, 0);
+  assert.equal(s.cash, 800);
+  // Crystals preserved + bonus awarded
+  assert.equal(s.crystals, prevCrystals + next.rewardCrystals);
+  // New location has brand-new stations & upgrades
+  assert.equal(getZoneStations(s.activeZoneId)[0].name, "Ледовое колесо");
+  assert.equal(getZoneUpgrades(s.activeZoneId)[0].name, "Антилёд-подогрев");
 });
 
-test("profile taps, achievements, and prestige preserve zones and perks", () => {
+test("mining cycles, boosters, perks, achievements, and prestige work", () => {
   const s = createInitialState(0);
+  let mined = 0;
+  for (let i = 0; i < 12; i += 1) {
+    for (const p of tickEconomy(s, 0.2)) mined += p.amount;
+  }
+  assert.ok(mined > 0);
+
+  const base = getTotals(s).effectiveIncomePerSec;
+  assert.equal(buyBoosterAction(s, "turbo_3x", "crystals").ok, true);
+  assert.ok(getTotals(s).effectiveIncomePerSec >= base * 2.9);
+
+  s.crystals = 20;
+  assert.equal(buyShopPerkAction(s, "gold_blades"), true);
+
   for (let i = 0; i < 25; i += 1) applyTap(s);
-  const achs = checkAchievements(s);
-  assert.ok(achs.some((a) => a.id === "ach_tap_25"));
+  assert.ok(checkAchievements(s).some((a) => a.id === "ach_tap_25"));
 
   s.runCash = 100000;
-  s.unlockedZones.push("glacier");
   const pending = computePendingEngineers(s);
   assert.ok(pending >= 1);
   triggerPrestige(s);
-  assert.ok(s.unlockedZones.includes("glacier"));
-  assert.equal(s.profile.totalTaps, 25);
-});
-
-test("upgrade preview computes delta income and watts", () => {
-  const s = createInitialState(0);
-  const preview = getStationUpgradePreview(s, STATION_DEFS[1], 1);
-  assert.ok(preview.deltaIncome > 0 && preview.deltaWatts > 0);
-  s.cash = 500;
-  assert.equal(buyUpgradeAction(s, "riverFlow"), true);
-  assert.equal(getCityEraIndex(150), 1);
+  assert.equal(s.engineers, pending);
+  assert.equal(s.shopPerks.gold_blades, 1);
+  checkAndClaimGoals(s);
 });

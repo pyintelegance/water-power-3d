@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { STATION_DEFS, getCityEraIndex, getTotals } from "./economy.js";
+import { getCityEraIndex, getTotals, getZoneStations } from "./economy.js";
 
 const CAMERA_PRESETS = [
   { name: "Обзор", pos: new THREE.Vector3(18.5, 17.5, 22.0), target: new THREE.Vector3(2.8, 0.8, 0.8) },
@@ -64,16 +64,20 @@ export class WaterPowerWorld {
     this.pulsePaths = [];
     this.splashPool = [];
     this.rainPool = [];
+    this.snowPool = [];
     this.trees = [];
+    this.cyberRings = [];
 
     this.initRenderer();
     this.initScene();
     this.buildTerrainAndRiver();
+    this.buildZoneLandmarks();
     this.buildStations();
     this.buildPowerLines();
     this.buildCityEras();
     this.buildSplashParticles();
     this.buildRainParticles();
+    this.buildSnowParticles();
     this.bindInput();
     this.resize();
   }
@@ -273,24 +277,22 @@ export class WaterPowerWorld {
       opacity: 0.35
     });
 
-    STATION_DEFS.forEach((def, idx) => {
+    getZoneStations("valley").forEach((def, idx) => {
       const z = zPositions[idx];
       const y = yPositions[idx];
       const slot = new THREE.Group();
       slot.position.set(-1.2, y, z);
 
-      // Hologram placeholder when locked
       const pad = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.25, 2.4), blueprintMat);
       pad.position.set(0, 0.1, 0);
       slot.add(pad);
 
-      // Actual station root
       const model = new THREE.Group();
       model.visible = false;
       let spinner = null;
       let extraSpinner = null;
 
-      if (def.id === "wood_wheel") {
+      if (idx === 0) {
         const wood = flatMat("#92400e");
         const iron = flatMat("#475569", 0.4, 0.5);
         addBox(model, 0.3, 1.7, 0.3, -1.35, 0.65, 0, wood);
@@ -299,7 +301,7 @@ export class WaterPowerWorld {
         spinner = this.createWheelMesh(8, 1.05, 1.5, "#78350f", "#b45309");
         spinner.position.set(0, 1.05, 0);
         model.add(spinner);
-      } else if (def.id === "twin_paddle") {
+      } else if (idx === 1) {
         const stone = flatMat("#64748b");
         const copper = flatMat("#d97706", 0.4, 0.6);
         addBox(model, 0.45, 2.0, 0.7, -1.6, 0.75, 0, stone);
@@ -310,7 +312,7 @@ export class WaterPowerWorld {
         extraSpinner = this.createWheelMesh(10, 1.15, 0.9, "#334155", "#0284c7");
         extraSpinner.position.set(0.65, 1.15, 0);
         model.add(spinner, extraSpinner);
-      } else if (def.id === "pelton_jet") {
+      } else if (idx === 2) {
         const steel = flatMat("#cbd5e1", 0.35, 0.65);
         const cyanGlow = flatMat("#06b6d4", 0.2, 0.2, { emissive: "#0ea5e9", emissiveIntensity: 0.7 });
         addBox(model, 3.6, 0.4, 1.4, 0, 0.2, 0, flatMat("#334155"));
@@ -319,7 +321,7 @@ export class WaterPowerWorld {
         spinner = this.createWheelMesh(12, 1.2, 1.2, "#0284c7", "#38bdf8");
         spinner.position.set(-0.2, 1.25, 0);
         model.add(spinner);
-      } else if (def.id === "concrete_dam") {
+      } else if (idx === 3) {
         const concrete = flatMat("#cbd5e1", 0.8);
         const accent = flatMat("#0284c7", 0.4, 0.3);
         const glow = flatMat("#38bdf8", 0.2, 0.1, { emissive: "#38bdf8", emissiveIntensity: 0.85 });
@@ -329,7 +331,7 @@ export class WaterPowerWorld {
         spinner = this.createWheelMesh(14, 0.95, 1.6, "#1e293b", "#38bdf8");
         spinner.position.set(-0.5, 0.95, 0.85);
         model.add(spinner);
-      } else if (def.id === "arch_megadam") {
+      } else if (idx === 4) {
         const whiteWall = flatMat("#f8fafc", 0.5, 0.2);
         const neon = flatMat("#22d3ee", 0.15, 0.1, { emissive: "#06b6d4", emissiveIntensity: 1.0 });
         addBox(model, 6.2, 3.1, 1.4, 0, 1.4, 0, whiteWall);
@@ -339,7 +341,7 @@ export class WaterPowerWorld {
         spinner = this.createWheelMesh(16, 1.05, 1.8, "#0ea5e9", "#67e8f9");
         spinner.position.set(0, 1.05, 0.95);
         model.add(spinner);
-      } else if (def.id === "quantum_hydro") {
+      } else if (idx === 5) {
         const darkMetal = flatMat("#0f172a", 0.3, 0.8);
         const coreMat = flatMat("#67e8f9", 0.1, 0.1, { emissive: "#22d3ee", emissiveIntensity: 1.4 });
         addCyl(model, 1.7, 2.0, 0.8, 8, 0, 0.3, 0, darkMetal);
@@ -364,9 +366,63 @@ export class WaterPowerWorld {
         extraSpinner,
         scaleAnim: 0.01,
         pulseBoost: 0,
-        isQuantum: def.id === "quantum_hydro"
+        isQuantum: idx === 5
       };
     });
+  }
+
+  buildZoneLandmarks() {
+    // Location 2: Glacier snow peaks, ice floes, and warm geothermal stacks
+    this.glacierProps = new THREE.Group();
+    const snowMat = flatMat("#f8fafc", 0.85);
+    const iceMat = flatMat("#bae6fd", 0.25, 0.15);
+    const warmOrange = flatMat("#f97316", 0.3, 0.2, { emissive: "#ea580c", emissiveIntensity: 0.75 });
+
+    const peaks = [
+      [-10.5, 4.6, -15.0, 4.5, 7.5],
+      [-14.0, 3.8, -6.0, 4.0, 6.2],
+      [-12.5, 2.8, 5.5, 3.6, 5.0],
+      [15.0, 4.5, -16.0, 4.2, 6.8]
+    ];
+    for (const [px, py, pz, r, h] of peaks) {
+      const peak = new THREE.Mesh(new THREE.ConeGeometry(r, h, 5), snowMat);
+      peak.position.set(px, py, pz);
+      peak.castShadow = true;
+      this.glacierProps.add(peak);
+    }
+
+    const iceFloes = [[-2.6, 0.15, 9.5], [0.4, 0.15, 4.8], [-2.5, 0.15, -2.0], [0.2, 3.9, -13.0]];
+    for (const [ix, iy, iz] of iceFloes) {
+      addBox(this.glacierProps, 1.3, 0.22, 1.1, ix, iy, iz, iceMat, false);
+    }
+
+    // Geothermal warm beacon towers on right bank
+    addCyl(this.glacierProps, 0.45, 0.6, 2.8, 8, 5.5, 1.4, -7.2, flatMat("#475569"));
+    addCyl(this.glacierProps, 0.5, 0.5, 0.35, 8, 5.5, 2.9, -7.2, warmOrange, false);
+    this.glacierProps.visible = false;
+    this.scene.add(this.glacierProps);
+
+    // Location 3: Cyber Neon Arches over river & holographic rings
+    this.cyberProps = new THREE.Group();
+    const darkArch = flatMat("#0f172a", 0.3, 0.8);
+    const neonMagenta = flatMat("#f472b6", 0.15, 0.2, { emissive: "#ec4899", emissiveIntensity: 1.4 });
+    const neonCyan = flatMat("#22d3ee", 0.15, 0.2, { emissive: "#06b6d4", emissiveIntensity: 1.4 });
+
+    for (const az of [7.8, 0.8, -6.2]) {
+      addBox(this.cyberProps, 0.45, 4.6, 0.45, -4.2, 2.3, az, darkArch);
+      addBox(this.cyberProps, 0.45, 4.6, 0.45, 1.8, 2.3, az, darkArch);
+      addBox(this.cyberProps, 6.4, 0.45, 0.45, -1.2, 4.6, az, darkArch);
+      addBox(this.cyberProps, 5.6, 0.16, 0.16, -1.2, 4.35, az, az === 0.8 ? neonMagenta : neonCyan, false);
+    }
+
+    const skyRing = new THREE.Mesh(new THREE.TorusGeometry(3.2, 0.12, 6, 28), neonMagenta);
+    skyRing.position.set(-1.2, 7.6, -12.0);
+    skyRing.rotation.x = Math.PI / 2.3;
+    this.cyberProps.add(skyRing);
+    this.cyberRings.push(skyRing);
+
+    this.cyberProps.visible = false;
+    this.scene.add(this.cyberProps);
   }
 
   buildPowerLines() {
@@ -540,9 +596,35 @@ export class WaterPowerWorld {
     }
   }
 
+  buildSnowParticles() {
+    const count = 90;
+    const geo = new THREE.BoxGeometry(0.14, 0.14, 0.14);
+    const mat = new THREE.MeshBasicMaterial({ color: "#ffffff", transparent: true, opacity: 0.85 });
+    this.snowInstanced = new THREE.InstancedMesh(geo, mat, count);
+    this.snowInstanced.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    this.snowInstanced.visible = false;
+    this.scene.add(this.snowInstanced);
+
+    for (let i = 0; i < count; i += 1) {
+      this.snowPool.push({
+        x: (Math.random() - 0.5) * 36,
+        y: Math.random() * 14,
+        z: (Math.random() - 0.5) * 32,
+        speed: 2.4 + Math.random() * 1.6,
+        phase: Math.random() * Math.PI * 2
+      });
+    }
+  }
+
   setZoneTheme(zoneId) {
     if (this.currentZoneId === zoneId) return;
     this.currentZoneId = zoneId;
+    if (this.glacierProps) this.glacierProps.visible = zoneId === "glacier";
+    if (this.cyberProps) this.cyberProps.visible = zoneId === "cyber";
+    for (const tree of this.trees) {
+      tree.visible = zoneId !== "cyber";
+    }
+
     if (zoneId === "glacier") {
       this.scene.background.set("#b6e1ff");
       this.scene.fog.color.set("#cdeaff");
@@ -733,7 +815,7 @@ export class WaterPowerWorld {
 
     const { totalWatts, overdriveMult } = getTotals(state);
     const rainSpeed = (state.boosters?.rain_2x || 0) > 0 ? 1.55 : 1;
-    const flowSpeed = (1 + state.upgrades.riverFlow * 0.14) * overdriveMult * rainSpeed;
+    const flowSpeed = (1 + (state.upgrades.u0 || 0) * 0.14) * overdriveMult * rainSpeed;
 
     // Keyboard WASD / Arrow camera pan
     let kx = 0;
@@ -777,10 +859,10 @@ export class WaterPowerWorld {
     }
 
     // Update stations
-    for (const def of STATION_DEFS) {
+    for (const def of getZoneStations(state.activeZoneId)) {
       const st = state.stations[def.id];
       const node = this.stationNodes[def.id];
-      if (!node) continue;
+      if (!node || !st) continue;
 
       if (st.unlocked) {
         node.pad.visible = false;
@@ -814,7 +896,7 @@ export class WaterPowerWorld {
     }
 
     // Update City Eras
-    this.activeEra = getCityEraIndex(totalWatts);
+    this.activeEra = getCityEraIndex(state, totalWatts);
     for (let i = 0; i < this.eraGroups.length; i += 1) {
       const unlocked = i <= this.activeEra;
       const grp = this.eraGroups[i];
@@ -883,6 +965,32 @@ export class WaterPowerWorld {
         this.rainInstanced.setMatrixAt(i, this.dummy.matrix);
       }
       this.rainInstanced.instanceMatrix.needsUpdate = true;
+    }
+
+    // Snowfall in Glacier biome & rotating rings in Cyber biome
+    const snowing = state.activeZoneId === "glacier";
+    this.snowInstanced.visible = snowing;
+    if (snowing) {
+      for (let i = 0; i < this.snowPool.length; i += 1) {
+        const s = this.snowPool[i];
+        s.y -= s.speed * dt;
+        s.x += Math.sin(t + s.phase) * 0.5 * dt;
+        if (s.y < 0) {
+          s.y = 14;
+          s.x = (Math.random() - 0.5) * 36;
+          s.z = (Math.random() - 0.5) * 32;
+        }
+        this.dummy.position.set(s.x, s.y, s.z);
+        this.dummy.scale.setScalar(1);
+        this.dummy.updateMatrix();
+        this.snowInstanced.setMatrixAt(i, this.dummy.matrix);
+      }
+      this.snowInstanced.instanceMatrix.needsUpdate = true;
+    }
+    if (state.activeZoneId === "cyber") {
+      for (const ring of this.cyberRings) {
+        ring.rotation.z += dt * 0.9;
+      }
     }
 
     this.renderer.render(this.scene, this.camera);
