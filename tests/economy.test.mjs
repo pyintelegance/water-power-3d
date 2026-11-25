@@ -10,8 +10,11 @@ import {
   canAdvanceZone,
   checkAchievements,
   checkAndClaimGoals,
+  claimQuestReward,
+  collectRiverEventReward,
   computePendingEngineers,
   createInitialState,
+  getActiveQuest,
   getCurrentGoalProgress,
   getOnboardingUnlocks,
   getTotals,
@@ -106,4 +109,19 @@ test("mining cycles, boosters, perks, achievements, and prestige work", () => {
   assert.equal(s.engineers, pending);
   assert.equal(s.shopPerks.gold_blades, 1);
   checkAndClaimGoals(s);
+});
+
+test("mini-quests advance on taps and river events award cash or crystals", () => {
+  const s = createInitialState(0);
+  for (let i = 0; i < 15; i += 1) applyTap(s);
+  const q = getActiveQuest(s);
+  assert.equal(q.ready, true);
+  const prevCrystals = s.crystals;
+  const claimed = claimQuestReward(s);
+  assert.ok(claimed && s.crystals > prevCrystals);
+
+  const droneRes = collectRiverEventReward(s, "drone");
+  assert.equal(droneRes.crystals, 2);
+  const crateRes = collectRiverEventReward(s, "crate");
+  assert.ok(crateRes.cash >= 120);
 });

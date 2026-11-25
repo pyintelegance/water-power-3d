@@ -143,6 +143,13 @@ export const ACHIEVEMENT_DEFS = [
 
 export const AVATAR_CHOICES = ["av_0", "av_1", "av_2", "av_3", "av_4"];
 
+export const QUEST_TEMPLATES = [
+  { id: "q_taps", title: "Тапнуть по реке", kind: "taps", target: 15, crystals: 2, cashSec: 45 },
+  { id: "q_upgrades", title: "Улучшить станции", kind: "upgrades", target: 5, crystals: 2, cashSec: 75 },
+  { id: "q_events", title: "Поймать груз или дрон", kind: "events", target: 1, crystals: 3, cashSec: 90 },
+  { id: "q_overdrive", title: "Разогнать Турбо до x2.0", kind: "overdrive", target: 1, crystals: 2, cashSec: 60 }
+];
+
 export function getActiveZone(state) {
   return ZONES.find((z) => z.id === state.activeZoneId) || ZONES[0];
 }
@@ -195,7 +202,8 @@ export function createInitialState(engineers = 0, preserved = null) {
     boosters: { turbo_3x: 0, rain_2x: 0, auto_tap: 0 },
     claimedGoals: preserved?.claimedGoals || [],
     claimedAchievements: preserved?.claimedAchievements || [],
-    profile: preserved?.profile || { name: "Гидро-Мастер", avatar: "av_0", totalTaps: 0, playTimeSec: 0 },
+    quest: preserved?.quest || { index: 0, progress: 0 },
+    profile: preserved?.profile || { name: "Гидро-Мастер", avatar: "av_0", totalTaps: 0, playTimeSec: 0, eventsCaught: 0 },
     overdrive: 0,
     lastSavedAt: Date.now()
   };
@@ -522,12 +530,14 @@ export function buyStationAction(state, stationId, multMode) {
   if (!def) return false;
   const st = state.stations[stationId];
 
+  const stationWasUnlocked = st.unlocked;
   if (!st.unlocked) {
     if (state.cash < def.unlockCost) return false;
     state.cash -= def.unlockCost;
     st.unlocked = true;
     st.level = 1;
     st.cycleProgress = 0;
+    recordQuestEvent(state, "upgrades", 1);
     return true;
   }
 
@@ -542,6 +552,7 @@ export function buyStationAction(state, stationId, multMode) {
   if (state.cash < cost) return false;
   state.cash -= cost;
   st.level += count;
+  if (stationWasUnlocked) recordQuestEvent(state, "upgrades", count);
   return true;
 }
 
@@ -585,7 +596,66 @@ export function applyTap(state, comboMult = 1) {
   state.lifetimeCash += gained;
   state.overdrive = Math.min(1, state.overdrive + 0.16);
   state.profile.totalTaps = (state.profile.totalTaps || 0) + 1;
+  recordQuestEvent(state, "taps", 1);
+  if (getOverdriveMultiplier(state) >= 2.0) {
+    recordQuestEvent(state, "overdrive", 1);
+  }
   return gained;
+}
+
+export function getActiveQuest(state) {
+  if (!state.quest) state.quest = { index: 0, progress: 0 };
+  const idx = state.quest.index % QUEST_TEMPLATES.length;
+  const tpl = QUEST_TEMPLATES[idx];
+  const tierScale = 1 + Math.floor(state.quest.index / QUEST_TEMPLATES.length);
+  const target = tpl.kind === "events" || tpl.kind === "overdrive" ? tpl.target : tpl.target * tierScale;
+  const { effectiveIncomePerSec } = getTotals(state);
+  const rewardCash = Math.max(80 * getActiveZone(state).incomeMult, Math.floor(effectiveIncomePerSec * tpl.cashSec));
+  const progress = Math.min(target, state.quest.progress || 0);
+  return {
+    tpl,
+    target,
+    progress,
+    ready: progress >= target,
+    rewardCash,
+    rewardCrystals: tpl.crystals
+  };
+}
+
+export function recordQuestEvent(state, kind, amount = 1) {
+  if (!state.quest) state.quest = { index: 0, progress: 0 };
+  const q = getActiveQuest(state);
+  if (q.tpl.kind === kind && q.progress < q.target) {
+    state.quest.progress = Math.min(q.target, q.progress + amount);
+  }
+}
+
+export function claimQuestReward(state) {
+  const q = getActiveQuest(state);
+  if (!q.ready) return null;
+  state.cash += q.rewardCash;
+  state.runCash += q.rewardCash;
+  state.lifetimeCash += q.rewardCash;
+  state.crystals = (state.crystals || 0) + q.rewardCrystals;
+  state.quest.index += 1;
+  state.quest.progress = 0;
+  return { cash: q.rewardCash, crystals: q.rewardCrystals, title: q.tpl.title };
+}
+
+export function collectRiverEventReward(state, eventType) {
+  state.profile.eventsCaught = (state.profile.eventsCaught || 0) + 1;
+  recordQuestEvent(state, "events", 1);
+  const { effectiveIncomePerSec } = getTotals(state);
+  if (eventType === "drone") {
+    const crystals = 2;
+    state.crystals = (state.crystals || 0) + crystals;
+    return { type: "drone", cash: 0, crystals };
+  }
+  const cash = Math.max(120 * getActiveZone(state).incomeMult, Math.floor(effectiveIncomePerSec * 45));
+  state.cash += cash;
+  state.runCash += cash;
+  state.lifetimeCash += cash;
+  return { type: "crate", cash, crystals: 0 };
 }
 
 export function getOnboardingUnlocks(state) {
@@ -699,7 +769,8 @@ export function loadState() {
       completedZones: Array.isArray(parsed.completedZones) ? parsed.completedZones : [],
       claimedGoals: Array.isArray(parsed.claimedGoals) ? parsed.claimedGoals : [],
       claimedAchievements: Array.isArray(parsed.claimedAchievements) ? parsed.claimedAchievements : [],
-      profile: parsed.profile || { name: "Гидро-Мастер", avatar: "👷", totalTaps: 0, playTimeSec: 0 }
+      quest: parsed.quest || { index: 0, progress: 0 },
+      profile: parsed.profile || { name: "Гидро-Мастер", avatar: "av_0", totalTaps: 0, playTimeSec: 0, eventsCaught: 0 }
     });
     fresh.cash = Number(parsed.cash) || 0;
     fresh.runCash = Number(parsed.runCash) || fresh.cash;

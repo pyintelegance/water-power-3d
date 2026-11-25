@@ -37,9 +37,10 @@ function addCyl(parent, rt, rb, h, seg, x, y, z, mat, castShadow = true) {
 }
 
 export class WaterPowerWorld {
-  constructor(canvas, onTapWorld) {
+  constructor(canvas, onTapWorld, onTapEvent = null) {
     this.canvas = canvas;
     this.onTapWorld = onTapWorld;
+    this.onTapEvent = onTapEvent;
     this.clock = new THREE.Clock();
     this.presetIndex = 0;
 
@@ -72,6 +73,8 @@ export class WaterPowerWorld {
     this.clouds = [];
     this.windSpinners = [];
     this.stationMats = null;
+    this.activeEvent = null;
+    this.nextEventInSec = 10;
 
     this.initRenderer();
     this.initScene();
@@ -86,6 +89,7 @@ export class WaterPowerWorld {
     this.buildSplashParticles();
     this.buildRainParticles();
     this.buildSnowParticles();
+    this.buildRiverEventModels();
     this.bindInput();
     this.resize();
   }
@@ -771,6 +775,68 @@ export class WaterPowerWorld {
     }
   }
 
+  buildRiverEventModels() {
+    // 1. Floating Golden Energy Crate
+    const crate = new THREE.Group();
+    const goldMat = flatMat("#fbbf24", 0.25, 0.4, { emissive: "#f59e0b", emissiveIntensity: 0.45 });
+    const trimMat = flatMat("#0ea5e9", 0.3, 0.5, { emissive: "#38bdf8", emissiveIntensity: 0.65 });
+    addBox(crate, 1.15, 0.95, 1.15, 0, 0.45, 0, goldMat);
+    addBox(crate, 1.25, 0.18, 1.25, 0, 0.85, 0, trimMat, false);
+    crate.visible = false;
+    this.scene.add(crate);
+
+    // 2. Crystal Cargo Drone
+    const drone = new THREE.Group();
+    const bodyMat = flatMat("#1e293b", 0.3, 0.7);
+    const podMat = flatMat("#c084fc", 0.15, 0.2, { emissive: "#a855f7", emissiveIntensity: 1.1 });
+    addBox(drone, 1.4, 0.35, 1.0, 0, 0, 0, bodyMat);
+    const pod = new THREE.Mesh(new THREE.OctahedronGeometry(0.45, 0), podMat);
+    pod.position.set(0, -0.55, 0);
+    drone.add(pod);
+    const rotors = [];
+    for (const [rx, rz] of [[-0.85, -0.6], [0.85, -0.6], [-0.85, 0.6], [0.85, 0.6]]) {
+      const r = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.05, 0.14), flatMat("#67e8f9", 0.2, 0.1, { emissive: "#38bdf8", emissiveIntensity: 0.9 }));
+      r.position.set(rx, 0.24, rz);
+      drone.add(r);
+      rotors.push(r);
+    }
+    drone.visible = false;
+    this.scene.add(drone);
+
+    this.eventPrefabs = { crate, drone, rotors };
+  }
+
+  spawnRiverEvent(forcedType = null) {
+    if (this.activeEvent || !this.eventPrefabs) return null;
+    const type = forcedType || (Math.random() < 0.5 ? "crate" : "drone");
+    const mesh = this.eventPrefabs[type];
+    mesh.visible = true;
+    if (type === "crate") {
+      mesh.position.set(-1.2 + (Math.random() - 0.5) * 1.4, 0.12, -8.2);
+    } else {
+      mesh.position.set(-12.0, 4.7, -1.0 + (Math.random() - 0.5) * 6);
+    }
+    this.activeEvent = { type, mesh, life: 0 };
+    return type;
+  }
+
+  collectActiveEvent() {
+    if (!this.activeEvent) return null;
+    const { type, mesh } = this.activeEvent;
+    const worldPos = mesh.position.clone();
+    mesh.visible = false;
+    this.activeEvent = null;
+    this.nextEventInSec = 18 + Math.random() * 12;
+    this.spawnSplash(worldPos.x, Math.max(0.4, worldPos.y), worldPos.z, 14);
+    const projected = worldPos.project(this.camera);
+    const rect = this.canvas.getBoundingClientRect();
+    return {
+      type,
+      screenX: rect.left + ((projected.x + 1) * 0.5) * rect.width,
+      screenY: rect.top + ((-projected.y + 1) * 0.5) * rect.height
+    };
+  }
+
   setZoneTheme(zoneId) {
     if (this.currentZoneId === zoneId) return;
     this.currentZoneId = zoneId;
@@ -965,6 +1031,16 @@ export class WaterPowerWorld {
         pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
         pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
         raycaster.setFromCamera(pointer, this.camera);
+
+        if (this.activeEvent) {
+          const evHit = raycaster.intersectObject(this.activeEvent.mesh, true);
+          if (evHit.length > 0 && this.onTapEvent) {
+            const collected = this.collectActiveEvent();
+            if (collected) this.onTapEvent(collected);
+            return;
+          }
+        }
+
         const hit = raycaster.intersectObject(this.riverMesh);
         if (hit.length > 0) {
           this.spawnSplash(hit[0].point.x, hit[0].point.y + 0.2, hit[0].point.z, 10);
@@ -1224,6 +1300,35 @@ export class WaterPowerWorld {
     for (const c of this.clouds) {
       c.grp.position.x += c.speed * dt;
       if (c.grp.position.x > 34) c.grp.position.x = -34;
+    }
+
+    // Active 3D River / Drone Events
+    if (this.activeEvent) {
+      this.activeEvent.life += dt;
+      if (this.activeEvent.type === "crate") {
+        this.activeEvent.mesh.position.z += dt * 1.35 * Math.min(2.0, flowSpeed);
+        this.activeEvent.mesh.position.y = 0.14 + Math.sin(t * 4.0) * 0.08;
+        this.activeEvent.mesh.rotation.y += dt * 0.9;
+        if (this.activeEvent.mesh.position.z > 14.5) {
+          this.activeEvent.mesh.visible = false;
+          this.activeEvent = null;
+          this.nextEventInSec = 16 + Math.random() * 10;
+        }
+      } else {
+        this.activeEvent.mesh.position.x += dt * 2.2;
+        this.activeEvent.mesh.position.y = 4.6 + Math.sin(t * 3.2) * 0.25;
+        for (const r of this.eventPrefabs.rotors) r.rotation.y += dt * 18;
+        if (this.activeEvent.mesh.position.x > 16.0) {
+          this.activeEvent.mesh.visible = false;
+          this.activeEvent = null;
+          this.nextEventInSec = 16 + Math.random() * 10;
+        }
+      }
+    } else {
+      this.nextEventInSec -= dt;
+      if (this.nextEventInSec <= 0) {
+        this.spawnRiverEvent();
+      }
     }
 
     this.renderer.render(this.scene, this.camera);

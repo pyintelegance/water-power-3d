@@ -14,9 +14,12 @@ import {
   canAdvanceZone,
   checkAchievements,
   checkAndClaimGoals,
+  claimQuestReward,
+  collectRiverEventReward,
   computePendingEngineers,
   formatCompact,
   formatWatts,
+  getActiveQuest,
   getActiveZone,
   getBoosterCashCost,
   getBulkStationCost,
@@ -87,6 +90,10 @@ const btnGoalCollapse = document.getElementById("btn-goal-collapse");
 const overdriveFill = document.getElementById("overdrive-fill");
 const overdriveLabel = document.getElementById("overdrive-label");
 const comboPill = document.getElementById("combo-pill");
+const btnEventAlert = document.getElementById("btn-event-alert");
+const questPill = document.getElementById("quest-pill");
+const questText = document.getElementById("quest-text");
+const btnQuestClaim = document.getElementById("btn-quest-claim");
 const onboardingHint = document.getElementById("onboarding-hint");
 const activeBoostersEl = document.getElementById("active-boosters");
 const cashPillEl = document.querySelector(".cash-pill");
@@ -231,14 +238,34 @@ function showBannerToast(badge, title) {
   }, 3000);
 }
 
-const world = new WaterPowerWorld(canvas, (x, y) => {
-  const comboMult = registerTapCombo();
-  const earned = applyTap(state, comboMult);
-  sound.playTap(tapCombo);
-  spawnTapText(x, y, earned, comboMult);
-  spawnFlyingOrbs(x, y, cashPillEl, "gold", 2);
+function handleEventCollected(collected) {
+  if (!collected) return;
+  const reward = collectRiverEventReward(state, collected.type);
+  sound.playUnlock();
+  world.triggerShake(0.16);
+  if (reward.crystals > 0) {
+    spawnFlyingOrbs(collected.screenX, collected.screenY, crystalPillEl, "crystal", 5);
+    showBannerToast("ДРОН ПОЙМАН", `+${reward.crystals} крист.`);
+  } else {
+    spawnFlyingOrbs(collected.screenX, collected.screenY, cashPillEl, "gold", 6);
+    showBannerToast("ЭНЕРГО-ГРУЗ", `+${formatCompact(reward.cash, "$")}`);
+  }
+  saveState(state);
   updateHudAndButtons();
-});
+}
+
+const world = new WaterPowerWorld(
+  canvas,
+  (x, y) => {
+    const comboMult = registerTapCombo();
+    const earned = applyTap(state, comboMult);
+    sound.playTap(tapCombo);
+    spawnTapText(x, y, earned, comboMult);
+    spawnFlyingOrbs(x, y, cashPillEl, "gold", 2);
+    updateHudAndButtons();
+  },
+  handleEventCollected
+);
 
 function applyOnboardingVisibility() {
   const unlocks = getOnboardingUnlocks(state);
@@ -673,6 +700,33 @@ function updateHudAndButtons() {
     comboPill.classList.add("hidden");
   }
 
+  // Event alert chip
+  if (world.activeEvent) {
+    btnEventAlert.classList.remove("hidden");
+    btnEventAlert.textContent =
+      world.activeEvent.type === "drone"
+        ? "Дрон с кристаллами в небе — нажми!"
+        : "Золотой груз плывёт по реке — забери!";
+  } else {
+    btnEventAlert.classList.add("hidden");
+  }
+
+  // Mini-quest bar (unlocked after initial onboarding)
+  const unlocks = getOnboardingUnlocks(state);
+  if (unlocks.upgrades) {
+    const q = getActiveQuest(state);
+    questPill.classList.remove("hidden");
+    questText.textContent = `Задание: ${q.tpl.title} (${q.progress}/${q.target})`;
+    if (q.ready) {
+      btnQuestClaim.classList.remove("hidden");
+      btnQuestClaim.textContent = `Забрать +${q.rewardCrystals} крист.`;
+    } else {
+      btnQuestClaim.classList.add("hidden");
+    }
+  } else {
+    questPill.classList.add("hidden");
+  }
+
   const pct = Math.round(state.overdrive * 100);
   overdriveFill.style.width = `${pct}%`;
   overdriveLabel.textContent =
@@ -748,6 +802,24 @@ cardsList.addEventListener("click", (e) => {
 });
 
 btnAdvanceZone.addEventListener("click", openZoneTransitionModal);
+
+btnEventAlert.addEventListener("click", () => {
+  const collected = world.collectActiveEvent();
+  if (collected) handleEventCollected(collected);
+});
+
+btnQuestClaim.addEventListener("click", () => {
+  const res = claimQuestReward(state);
+  if (res) {
+    sound.playUnlock();
+    const rect = questPill.getBoundingClientRect();
+    spawnFlyingOrbs(rect.right - 30, rect.top + 10, crystalPillEl, "crystal", 4);
+    spawnFlyingOrbs(rect.left + 40, rect.top + 10, cashPillEl, "gold", 3);
+    showBannerToast("ЗАДАНИЕ ВЫПОЛНЕНО", `+${formatCompact(res.cash, "$")} · +${res.crystals} крист.`);
+    saveState(state);
+    updateHudAndButtons();
+  }
+});
 btnCancelZone.addEventListener("click", () => zoneModal.classList.add("hidden"));
 btnConfirmZone.addEventListener("click", () => {
   const nextZone = advanceToNextZone(state);
@@ -909,6 +981,7 @@ window.addEventListener("pagehide", () => saveState(state));
 let lastFrameTime = performance.now();
 let uiAccumulator = 0;
 let saveAccumulator = 0;
+let lastEventType = null;
 
 function frame(now) {
   const dt = (now - lastFrameTime) / 1000;
@@ -927,6 +1000,12 @@ function frame(now) {
 
   const payouts = tickEconomy(state, dt);
   world.render(state);
+
+  const curEventType = world.activeEvent ? world.activeEvent.type : null;
+  if (curEventType !== lastEventType) {
+    lastEventType = curEventType;
+    updateHudAndButtons();
+  }
 
   for (const p of payouts) {
     world.triggerStationPulse(p.stationId);
@@ -955,6 +1034,7 @@ requestAnimationFrame(frame);
 window.__WATER_POWER_DEBUG__ = {
   state,
   world,
+  refreshHud: updateHudAndButtons,
   getTotals: () => getTotals(state),
   grantCash: (amt) => {
     state.cash += amt;

@@ -175,6 +175,55 @@ body,
 
 .combo-pill.hidden { display: none; }
 
+.event-alert-btn {
+  align-self: center;
+  pointer-events: auto;
+  border: none;
+  border-bottom: 3px solid #9a3412;
+  background: linear-gradient(180deg, #fde047, #f97316);
+  color: #1c1000;
+  font-size: 11px;
+  font-weight: 900;
+  padding: 5px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  animation: pulseBtn 1.2s infinite;
+}
+
+.event-alert-btn.hidden { display: none; }
+
+.quest-pill {
+  align-self: stretch;
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: rgba(12, 31, 50, 0.86);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 10px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #e0f2fe;
+}
+
+.quest-pill.hidden { display: none; }
+
+.quest-claim-btn {
+  border: none;
+  border-bottom: 2px solid #047857;
+  background: linear-gradient(180deg, #4ade80, #10b981);
+  color: #032214;
+  font-size: 10.5px;
+  font-weight: 900;
+  padding: 4px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.quest-claim-btn.hidden { display: none; }
+
 .onboarding-hint {
   position: absolute;
   top: 52%;
