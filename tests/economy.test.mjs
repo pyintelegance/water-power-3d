@@ -36,8 +36,8 @@ test("initial state starts in Green Valley with valley stations and upgrades", (
 
 test("reaching 1.8 MW enables transition to Glacier and resets stations/cash cleanly", () => {
   const s = createInitialState(0);
-  s.cash = 1e9;
-  s.runCash = 1e9;
+  s.cash = 2e9;
+  s.runCash = 2e9;
   for (const def of getZoneStations("valley")) {
     buyStationAction(s, def.id, "x1");
     buyStationAction(s, def.id, "x10");
@@ -56,7 +56,7 @@ test("reaching 1.8 MW enables transition to Glacier and resets stations/cash cle
   // Cash, stations, and local upgrades reset on transition
   assert.equal(s.stations.s1.unlocked, false);
   assert.equal(s.upgrades.u0, 0);
-  assert.equal(s.cash, 800);
+  assert.equal(s.cash, 100 * next.incomeMult);
   // Crystals preserved + bonus awarded
   assert.equal(s.crystals, prevCrystals + next.rewardCrystals);
   // New location has brand-new stations & upgrades

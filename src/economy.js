@@ -22,24 +22,24 @@ export const ZONES = [
       { minWatts: 1800000, name: "Зелёный мегаполис" }
     ],
     stations: [
-      { id: "s0", name: "Водяное колесо", icon: "s0", desc: "Деревянная мельница в ручье", unlockCost: 0, baseCost: 12, costGrowth: 1.15, baseIncome: 2.5, baseWatts: 10, cycleSec: 1.6 },
-      { id: "s1", name: "Двойная турбина", icon: "s1", desc: "Усиленный вал с парой роторов", unlockCost: 120, baseCost: 145, costGrowth: 1.16, baseIncome: 22, baseWatts: 65, cycleSec: 2.0 },
-      { id: "s2", name: "Турбина Пелтона", icon: "s2", desc: "Напорная струя высокого давления", unlockCost: 1600, baseCost: 1900, costGrowth: 1.17, baseIncome: 190, baseWatts: 520, cycleSec: 2.3 },
-      { id: "s3", name: "Бетонная ГЭС", icon: "s3", desc: "Плотина с мощным водосбросом", unlockCost: 25000, baseCost: 30000, costGrowth: 1.18, baseIncome: 2100, baseWatts: 5600, cycleSec: 2.7 },
-      { id: "s4", name: "Арочная мега-ГЭС", icon: "s4", desc: "Инженерный каскад в каньоне", unlockCost: 420000, baseCost: 500000, costGrowth: 1.19, baseIncome: 28000, baseWatts: 82000, cycleSec: 3.1 },
-      { id: "s5", name: "Гидро-реактор", icon: "s5", desc: "Квантовый генератор чистой воды", unlockCost: 10000000, baseCost: 12500000, costGrowth: 1.2, baseIncome: 480000, baseWatts: 1600000, cycleSec: 3.5 }
+      { id: "s0", name: "Водяное колесо", icon: "s0", desc: "Деревянная мельница в ручье", unlockCost: 0, baseCost: 15, costGrowth: 1.17, baseIncome: 1.0, baseWatts: 10, cycleSec: 2.0 },
+      { id: "s1", name: "Двойная турбина", icon: "s1", desc: "Усиленный вал с парой роторов", unlockCost: 180, baseCost: 220, costGrowth: 1.18, baseIncome: 8, baseWatts: 65, cycleSec: 2.4 },
+      { id: "s2", name: "Турбина Пелтона", icon: "s2", desc: "Напорная струя высокого давления", unlockCost: 2600, baseCost: 3100, costGrowth: 1.19, baseIncome: 70, baseWatts: 520, cycleSec: 2.7 },
+      { id: "s3", name: "Бетонная ГЭС", icon: "s3", desc: "Плотина с мощным водосбросом", unlockCost: 42000, baseCost: 50000, costGrowth: 1.2, baseIncome: 750, baseWatts: 5600, cycleSec: 3.1 },
+      { id: "s4", name: "Арочная мега-ГЭС", icon: "s4", desc: "Инженерный каскад в каньоне", unlockCost: 780000, baseCost: 920000, costGrowth: 1.21, baseIncome: 9500, baseWatts: 82000, cycleSec: 3.5 },
+      { id: "s5", name: "Гидро-реактор", icon: "s5", desc: "Квантовый генератор чистой воды", unlockCost: 18000000, baseCost: 22000000, costGrowth: 1.22, baseIncome: 150000, baseWatts: 1600000, cycleSec: 4.0 }
     ],
     upgrades: [
-      { id: "u0", name: "Напор реки", icon: "flow", targetLabel: "Ускоряет вращение всех колёс", baseCost: 40, costGrowth: 1.55, maxLevel: 40, kind: "flow" },
-      { id: "u1", name: "Мощь генераторов", icon: "dam", targetLabel: "Повышает выработку каждой ГЭС", baseCost: 160, costGrowth: 1.65, maxLevel: 35, kind: "dam" },
-      { id: "u2", name: "Умная ЛЭП", icon: "tap", targetLabel: "Усиливает тап по воде и разгон", baseCost: 80, costGrowth: 1.5, maxLevel: 35, kind: "tap" },
-      { id: "u3", name: "Городской тариф", icon: "tariff", targetLabel: "Поднимает цену за энергию", baseCost: 360, costGrowth: 1.7, maxLevel: 30, kind: "tariff" }
+      { id: "u0", name: "Напор реки", icon: "flow", targetLabel: "Ускоряет вращение всех колёс", baseCost: 55, costGrowth: 1.65, maxLevel: 40, kind: "flow" },
+      { id: "u1", name: "Мощь генераторов", icon: "dam", targetLabel: "Повышает выработку каждой ГЭС", baseCost: 240, costGrowth: 1.75, maxLevel: 35, kind: "dam" },
+      { id: "u2", name: "Умная ЛЭП", icon: "tap", targetLabel: "Усиливает тап по воде и разгон", baseCost: 110, costGrowth: 1.6, maxLevel: 35, kind: "tap" },
+      { id: "u3", name: "Городской тариф", icon: "tariff", targetLabel: "Поднимает цену за энергию", baseCost: 520, costGrowth: 1.8, maxLevel: 30, kind: "tariff" }
     ],
     goals: [
-      { id: "v_1", title: "Осветить деревню", subtitle: "Накопите 120 W", targetWatts: 120, rewardCash: 95, rewardCrystals: 3 },
-      { id: "v_2", title: "Запустить посёлок", subtitle: "Достигните 3.0 kW", targetWatts: 3000, rewardCash: 2200, rewardCrystals: 5 },
-      { id: "v_3", title: "Запитать Эко-город", subtitle: "Достигните 75 kW", targetWatts: 75000, rewardCash: 55000, rewardCrystals: 8 },
-      { id: "v_4", title: "Открыть Снежные вершины", subtitle: "Достигните 1.8 MW для новой главы", targetWatts: 1800000, rewardCash: 1500000, rewardCrystals: 10 }
+      { id: "v_1", title: "Осветить деревню", subtitle: "Накопите 120 W", targetWatts: 120, rewardCash: 65, rewardCrystals: 3 },
+      { id: "v_2", title: "Запустить посёлок", subtitle: "Достигните 3.0 kW", targetWatts: 3000, rewardCash: 1200, rewardCrystals: 5 },
+      { id: "v_3", title: "Запитать Эко-город", subtitle: "Достигните 75 kW", targetWatts: 75000, rewardCash: 28000, rewardCrystals: 8 },
+      { id: "v_4", title: "Открыть Снежные вершины", subtitle: "Достигните 1.8 MW для новой главы", targetWatts: 1800000, rewardCash: 650000, rewardCrystals: 10 }
     ]
   },
   {
@@ -48,7 +48,7 @@ export const ZONES = [
     name: "Снежные вершины",
     shortName: "Ледник",
     icon: "glacier",
-    incomeMult: 8,
+    incomeMult: 5,
     nextZoneId: "cyber",
     nextZoneTargetWatts: 18000000,
     rewardCrystals: 18,
@@ -61,24 +61,24 @@ export const ZONES = [
       { minWatts: 18000000, name: "Аврора-Мегаполис" }
     ],
     stations: [
-      { id: "s0", name: "Ледовое колесо", icon: "s0", desc: "Морозостойкий ледовый ротор", unlockCost: 0, baseCost: 15, costGrowth: 1.15, baseIncome: 4.5, baseWatts: 35, cycleSec: 1.5 },
-      { id: "s1", name: "Крио-турбина", icon: "s1", desc: "Спаренный вал с термо-подогревом", unlockCost: 180, baseCost: 220, costGrowth: 1.16, baseIncome: 42, baseWatts: 260, cycleSec: 1.9 },
-      { id: "s2", name: "Горный водомёт", icon: "s2", desc: "Ледниковая струя под давлением", unlockCost: 2600, baseCost: 3200, costGrowth: 1.17, baseIncome: 390, baseWatts: 2200, cycleSec: 2.2 },
-      { id: "s3", name: "Ледниковая дамба", icon: "s3", desc: "Армированная полярная плотина", unlockCost: 42000, baseCost: 52000, costGrowth: 1.18, baseIncome: 4400, baseWatts: 24000, cycleSec: 2.6 },
-      { id: "s4", name: "Гео-термо ГЭС", icon: "s4", desc: "Энергия пара и горного каскада", unlockCost: 750000, baseCost: 920000, costGrowth: 1.19, baseIncome: 62000, baseWatts: 360000, cycleSec: 3.0 },
-      { id: "s5", name: "Аврора-реактор", icon: "s5", desc: "Кристалл северного сияния", unlockCost: 16000000, baseCost: 20000000, costGrowth: 1.2, baseIncome: 1100000, baseWatts: 7500000, cycleSec: 3.3 }
+      { id: "s0", name: "Ледовое колесо", icon: "s0", desc: "Морозостойкий ледовый ротор", unlockCost: 0, baseCost: 18, costGrowth: 1.17, baseIncome: 1.8, baseWatts: 35, cycleSec: 1.9 },
+      { id: "s1", name: "Крио-турбина", icon: "s1", desc: "Спаренный вал с термо-подогревом", unlockCost: 220, baseCost: 270, costGrowth: 1.18, baseIncome: 16, baseWatts: 260, cycleSec: 2.3 },
+      { id: "s2", name: "Горный водомёт", icon: "s2", desc: "Ледниковая струя под давлением", unlockCost: 3400, baseCost: 4200, costGrowth: 1.19, baseIncome: 145, baseWatts: 2200, cycleSec: 2.6 },
+      { id: "s3", name: "Ледниковая дамба", icon: "s3", desc: "Армированная полярная плотина", unlockCost: 58000, baseCost: 70000, costGrowth: 1.2, baseIncome: 1600, baseWatts: 24000, cycleSec: 3.0 },
+      { id: "s4", name: "Гео-термо ГЭС", icon: "s4", desc: "Энергия пара и горного каскада", unlockCost: 1100000, baseCost: 1350000, costGrowth: 1.21, baseIncome: 21000, baseWatts: 360000, cycleSec: 3.4 },
+      { id: "s5", name: "Аврора-реактор", icon: "s5", desc: "Кристалл северного сияния", unlockCost: 25000000, baseCost: 30000000, costGrowth: 1.22, baseIncome: 340000, baseWatts: 7500000, cycleSec: 3.8 }
     ],
     upgrades: [
-      { id: "u0", name: "Антилёд-подогрев", icon: "flow", targetLabel: "Разгоняет поток сквозь льды", baseCost: 55, costGrowth: 1.55, maxLevel: 40, kind: "flow" },
-      { id: "u1", name: "Ледокол-шлюз", icon: "dam", targetLabel: "Усиливает мощность крио-станций", baseCost: 220, costGrowth: 1.65, maxLevel: 35, kind: "dam" },
-      { id: "u2", name: "Тепловая сеть", icon: "tap", targetLabel: "Усиливает клик и тепловой импульс", baseCost: 110, costGrowth: 1.5, maxLevel: 35, kind: "tap" },
-      { id: "u3", name: "Полярный экспорт", icon: "tariff", targetLabel: "Повышает доход с мегаватт в горах", baseCost: 480, costGrowth: 1.7, maxLevel: 30, kind: "tariff" }
+      { id: "u0", name: "Антилёд-подогрев", icon: "flow", targetLabel: "Разгоняет поток сквозь льды", baseCost: 75, costGrowth: 1.65, maxLevel: 40, kind: "flow" },
+      { id: "u1", name: "Ледокол-шлюз", icon: "dam", targetLabel: "Усиливает мощность крио-станций", baseCost: 320, costGrowth: 1.75, maxLevel: 35, kind: "dam" },
+      { id: "u2", name: "Тепловая сеть", icon: "tap", targetLabel: "Усиливает клик и тепловой импульс", baseCost: 150, costGrowth: 1.6, maxLevel: 35, kind: "tap" },
+      { id: "u3", name: "Полярный экспорт", icon: "tariff", targetLabel: "Повышает доход с мегаватт в горах", baseCost: 700, costGrowth: 1.8, maxLevel: 30, kind: "tariff" }
     ],
     goals: [
-      { id: "g_1", title: "Согреть деревню", subtitle: "Выйдите на 500 W", targetWatts: 500, rewardCash: 240, rewardCrystals: 4 },
-      { id: "g_2", title: "Открыть горную базу", subtitle: "Достигните 20 kW", targetWatts: 20000, rewardCash: 9500, rewardCrystals: 6 },
-      { id: "g_3", title: "Термальный полис", subtitle: "Достигните 600 kW", targetWatts: 600000, rewardCash: 280000, rewardCrystals: 10 },
-      { id: "g_4", title: "Открыть Неоновый каньон", subtitle: "Достигните 18 MW для финала", targetWatts: 18000000, rewardCash: 8000000, rewardCrystals: 15 }
+      { id: "g_1", title: "Согреть деревню", subtitle: "Выйдите на 500 W", targetWatts: 500, rewardCash: 160, rewardCrystals: 4 },
+      { id: "g_2", title: "Открыть горную базу", subtitle: "Достигните 20 kW", targetWatts: 20000, rewardCash: 5500, rewardCrystals: 6 },
+      { id: "g_3", title: "Термальный полис", subtitle: "Достигните 600 kW", targetWatts: 600000, rewardCash: 150000, rewardCrystals: 10 },
+      { id: "g_4", title: "Открыть Неоновый каньон", subtitle: "Достигните 18 MW для финала", targetWatts: 18000000, rewardCash: 4000000, rewardCrystals: 15 }
     ]
   },
   {
@@ -87,7 +87,7 @@ export const ZONES = [
     name: "Неоновый каньон",
     shortName: "Неон",
     icon: "cyber",
-    incomeMult: 50,
+    incomeMult: 25,
     nextZoneId: null,
     nextZoneTargetWatts: null,
     rewardCrystals: 35,
@@ -100,24 +100,24 @@ export const ZONES = [
       { minWatts: 250000000, name: "Орбитальный Мегаполис" }
     ],
     stations: [
-      { id: "s0", name: "Плазма-ротор", icon: "s0", desc: "Неоновая турбина высокого тока", unlockCost: 0, baseCost: 20, costGrowth: 1.15, baseIncome: 9, baseWatts: 150, cycleSec: 1.4 },
-      { id: "s1", name: "Гипер-турбина", icon: "s1", desc: "Двойное лазерное ускорение", unlockCost: 260, baseCost: 320, costGrowth: 1.16, baseIncome: 85, baseWatts: 1200, cycleSec: 1.8 },
-      { id: "s2", name: "Магнитный канал", icon: "s2", desc: "Магнитный разгон плазменной воды", unlockCost: 3800, baseCost: 4600, costGrowth: 1.17, baseIncome: 820, baseWatts: 11000, cycleSec: 2.1 },
-      { id: "s3", name: "Кибер-плотина", icon: "s3", desc: "Голографическая дамба будущего", unlockCost: 65000, baseCost: 78000, costGrowth: 1.18, baseIncome: 9500, baseWatts: 140000, cycleSec: 2.5 },
-      { id: "s4", name: "Орбитальный шлюз", icon: "s4", desc: "Гравитационный гидро-каскад", unlockCost: 1100000, baseCost: 1400000, costGrowth: 1.19, baseIncome: 140000, baseWatts: 2200000, cycleSec: 2.9 },
-      { id: "s5", name: "Сингулярность ГЭС", icon: "s5", desc: "Главный реактор мегасити", unlockCost: 25000000, baseCost: 32000000, costGrowth: 1.2, baseIncome: 2600000, baseWatts: 55000000, cycleSec: 3.2 }
+      { id: "s0", name: "Плазма-ротор", icon: "s0", desc: "Неоновая турбина высокого тока", unlockCost: 0, baseCost: 24, costGrowth: 1.17, baseIncome: 3.5, baseWatts: 150, cycleSec: 1.8 },
+      { id: "s1", name: "Гипер-турбина", icon: "s1", desc: "Двойное лазерное ускорение", unlockCost: 340, baseCost: 420, costGrowth: 1.18, baseIncome: 32, baseWatts: 1200, cycleSec: 2.2 },
+      { id: "s2", name: "Магнитный канал", icon: "s2", desc: "Магнитный разгон плазменной воды", unlockCost: 5200, baseCost: 6400, costGrowth: 1.19, baseIncome: 290, baseWatts: 11000, cycleSec: 2.5 },
+      { id: "s3", name: "Кибер-плотина", icon: "s3", desc: "Голографическая дамба будущего", unlockCost: 92000, baseCost: 112000, costGrowth: 1.2, baseIncome: 3300, baseWatts: 140000, cycleSec: 2.9 },
+      { id: "s4", name: "Орбитальный шлюз", icon: "s4", desc: "Гравитационный гидро-каскад", unlockCost: 1700000, baseCost: 2100000, costGrowth: 1.21, baseIncome: 46000, baseWatts: 2200000, cycleSec: 3.3 },
+      { id: "s5", name: "Сингулярность ГЭС", icon: "s5", desc: "Главный реактор мегасити", unlockCost: 38000000, baseCost: 46000000, costGrowth: 1.22, baseIncome: 780000, baseWatts: 55000000, cycleSec: 3.7 }
     ],
     upgrades: [
-      { id: "u0", name: "Плазменный поток", icon: "flow", targetLabel: "Разгоняет поток в неон-канале", baseCost: 75, costGrowth: 1.55, maxLevel: 40, kind: "flow" },
-      { id: "u1", name: "Нано-генерация", icon: "dam", targetLabel: "Умножает добычу кибер-станций", baseCost: 300, costGrowth: 1.65, maxLevel: 35, kind: "dam" },
-      { id: "u2", name: "Нейро-клик", icon: "tap", targetLabel: "Максимизирует импульс клика", baseCost: 150, costGrowth: 1.5, maxLevel: 35, kind: "tap" },
-      { id: "u3", name: "Мега-контракт", icon: "tariff", targetLabel: "Премиальный тариф мегасити", baseCost: 650, costGrowth: 1.7, maxLevel: 30, kind: "tariff" }
+      { id: "u0", name: "Плазменный поток", icon: "flow", targetLabel: "Разгоняет поток в неон-канале", baseCost: 110, costGrowth: 1.65, maxLevel: 40, kind: "flow" },
+      { id: "u1", name: "Нано-генерация", icon: "dam", targetLabel: "Умножает добычу кибер-станций", baseCost: 440, costGrowth: 1.75, maxLevel: 35, kind: "dam" },
+      { id: "u2", name: "Нейро-клик", icon: "tap", targetLabel: "Максимизирует импульс клика", baseCost: 220, costGrowth: 1.6, maxLevel: 35, kind: "tap" },
+      { id: "u3", name: "Мега-контракт", icon: "tariff", targetLabel: "Премиальный тариф мегасити", baseCost: 960, costGrowth: 1.8, maxLevel: 30, kind: "tariff" }
     ],
     goals: [
-      { id: "c_1", title: "Зажечь Кибер-квартал", subtitle: "Выйдите на 5.0 kW", targetWatts: 5000, rewardCash: 1200, rewardCrystals: 5 },
-      { id: "c_2", title: "Питание Сектора Омега", subtitle: "Достигните 250 kW", targetWatts: 250000, rewardCash: 85000, rewardCrystals: 8 },
-      { id: "c_3", title: "Запустить Хроно-Сити", subtitle: "Достигните 10 MW", targetWatts: 10000000, rewardCash: 4500000, rewardCrystals: 15 },
-      { id: "c_4", title: "Орбитальный Мегаполис", subtitle: "Финал: достигните 250 MW", targetWatts: 250000000, rewardCash: 250000000, rewardCrystals: 40 }
+      { id: "c_1", title: "Зажечь Кибер-квартал", subtitle: "Выйдите на 5.0 kW", targetWatts: 5000, rewardCash: 800, rewardCrystals: 5 },
+      { id: "c_2", title: "Питание Сектора Омега", subtitle: "Достигните 250 kW", targetWatts: 250000, rewardCash: 45000, rewardCrystals: 8 },
+      { id: "c_3", title: "Запустить Хроно-Сити", subtitle: "Достигните 10 MW", targetWatts: 10000000, rewardCash: 2200000, rewardCrystals: 15 },
+      { id: "c_4", title: "Орбитальный Мегаполис", subtitle: "Финал: достигните 250 MW", targetWatts: 250000000, rewardCash: 100000000, rewardCrystals: 40 }
     ]
   }
 ];
@@ -126,7 +126,7 @@ export const BOOSTER_DEFS = [
   { id: "turbo_3x", name: "Турбо-поток x3", icon: "turbo_3x", desc: "Утроение дохода от всех ГЭС на 30 сек", durationSec: 30, crystalCost: 4 },
   { id: "rain_2x", name: "Штормовой ливень x2", icon: "rain_2x", desc: "Шторм в каньоне: скорость и добыча x2 (60 сек)", durationSec: 60, crystalCost: 3 },
   { id: "auto_tap", name: "Дрон-кликер", icon: "auto_tap", desc: "Авто-клик по реке 3 раза/сек (45 сек)", durationSec: 45, crystalCost: 3 },
-  { id: "cash_pack", name: "Фонд развития", icon: "cash_pack", desc: "Мгновенно +120 сек текущего дохода (мин. $500)", durationSec: 0, crystalCost: 5 }
+  { id: "cash_pack", name: "Фонд развития", icon: "cash_pack", desc: "Мгновенно +60 сек текущего дохода (мин. $250)", durationSec: 0, crystalCost: 5 }
 ];
 
 export const SHOP_PERK_DEFS = [
@@ -146,10 +146,10 @@ export const ACHIEVEMENT_DEFS = [
 export const AVATAR_CHOICES = ["av_0", "av_1", "av_2", "av_3", "av_4"];
 
 export const QUEST_TEMPLATES = [
-  { id: "q_taps", title: "Тапнуть по реке", kind: "taps", target: 15, crystals: 2, cashSec: 45 },
-  { id: "q_upgrades", title: "Улучшить станции", kind: "upgrades", target: 5, crystals: 2, cashSec: 75 },
-  { id: "q_events", title: "Поймать груз или дрон", kind: "events", target: 1, crystals: 3, cashSec: 90 },
-  { id: "q_overdrive", title: "Разогнать Турбо до x2.0", kind: "overdrive", target: 1, crystals: 2, cashSec: 60 }
+  { id: "q_taps", title: "Тапнуть по реке", kind: "taps", target: 15, crystals: 2, cashSec: 20 },
+  { id: "q_upgrades", title: "Улучшить станции", kind: "upgrades", target: 5, crystals: 2, cashSec: 30 },
+  { id: "q_events", title: "Поймать груз или дрон", kind: "events", target: 1, crystals: 3, cashSec: 40 },
+  { id: "q_overdrive", title: "Разогнать Турбо до x2.0", kind: "overdrive", target: 1, crystals: 2, cashSec: 25 }
 ];
 
 export function getActiveZone(state) {
@@ -216,8 +216,8 @@ export function getMilestoneMultiplier(level) {
   let mult = 1;
   if (level >= 10) mult *= 2;
   if (level >= 25) mult *= 2;
-  if (level >= 50) mult *= 3;
-  if (level >= 100) mult *= 4;
+  if (level >= 50) mult *= 2;
+  if (level >= 100) mult *= 3;
   return mult;
 }
 
@@ -229,7 +229,7 @@ export function getNextMilestoneLevel(level) {
 }
 
 export function getFlowSpeedMultiplier(state) {
-  return 1 + (state.upgrades.u0 || 0) * 0.22;
+  return 1 + (state.upgrades.u0 || 0) * 0.14;
 }
 
 export function getBoosterIncomeMultiplier(state) {
@@ -241,8 +241,8 @@ export function getBoosterIncomeMultiplier(state) {
 
 export function getGlobalMultiplier(state) {
   const flowMult = getFlowSpeedMultiplier(state);
-  const damMult = 1 + (state.upgrades.u1 || 0) * 0.35;
-  const tariffMult = 1 + (state.upgrades.u3 || 0) * 0.4;
+  const damMult = 1 + (state.upgrades.u1 || 0) * 0.22;
+  const tariffMult = 1 + (state.upgrades.u3 || 0) * 0.25;
   const engineerMult = 1 + (state.engineers || 0) * 0.5;
   const perkMult = 1 + (state.shopPerks?.gold_blades || 0) * 0.5;
   const zoneMult = getActiveZone(state).incomeMult;
@@ -250,7 +250,7 @@ export function getGlobalMultiplier(state) {
 }
 
 export function getOverdriveMultiplier(state) {
-  return 1 + Math.min(1, Math.max(0, state.overdrive)) * 2.0;
+  return 1 + Math.min(1, Math.max(0, state.overdrive)) * 1.5;
 }
 
 export function getStationOutput(state, def, levelOverride = null) {
@@ -267,12 +267,14 @@ export function getStationOutput(state, def, levelOverride = null) {
 
   const incomePerSec = def.baseIncome * level * milestone * globalMult * boosterMult;
   const watts =
-    def.baseWatts * level * milestone * (1 + (state.upgrades.u0 || 0) * 0.2) * batteryMult;
+    def.baseWatts * level * milestone * (1 + (state.upgrades.u0 || 0) * 0.16) * batteryMult;
 
-  const rainSpeed = (state.boosters?.rain_2x || 0) > 0 ? 1.6 : 1;
-  const speedBoost = (1 + (state.upgrades.u0 || 0) * 0.08) * getOverdriveMultiplier(state) * rainSpeed;
+  const rainSpeed = (state.boosters?.rain_2x || 0) > 0 ? 1.5 : 1;
+  const flowFactor = 1 + (state.upgrades.u0 || 0) * 0.08;
+  const speedBoost = flowFactor * getOverdriveMultiplier(state) * rainSpeed;
   const effectiveCycleSec = Math.max(0.4, def.cycleSec / speedBoost);
-  const payoutPerCycle = incomePerSec * (def.cycleSec / rainSpeed);
+  // Payout scales inversely with flowFactor * rainSpeed so actual $/sec equals incomePerSec * overdriveMult without double-dipping
+  const payoutPerCycle = (incomePerSec * def.cycleSec) / (flowFactor * rainSpeed);
   return { incomePerSec, watts, cycleSec: effectiveCycleSec, payoutPerCycle };
 }
 
@@ -289,7 +291,7 @@ export function getTotals(state) {
   const effectiveIncomePerSec = baseIncomePerSec * overdriveMult;
   const tapBonus = Math.max(
     1,
-    (2.5 + baseIncomePerSec * 0.24) * (1 + (state.upgrades.u2 || 0) * 0.5)
+    (1.0 + baseIncomePerSec * 0.12) * (1 + (state.upgrades.u2 || 0) * 0.35)
   );
   return { baseIncomePerSec, effectiveIncomePerSec, totalWatts, overdriveMult, tapBonus };
 }
@@ -449,24 +451,24 @@ export function getUpgradeEffectText(state, def) {
   const en = getLang() === "en";
   const sec = en ? "s" : "с";
   if (def.kind === "flow") {
-    const cur = 1 + lvl * 0.22;
-    const nxt = 1 + (lvl + 1) * 0.22;
-    return `${en ? "Flow" : "Поток"}: x${cur.toFixed(2)} → x${nxt.toFixed(2)} (+${formatCompact((totals.baseIncomePerSec * 0.22) / cur, "$")}/${sec})`;
+    const cur = 1 + lvl * 0.14;
+    const nxt = 1 + (lvl + 1) * 0.14;
+    return `${en ? "Flow" : "Поток"}: x${cur.toFixed(2)} → x${nxt.toFixed(2)} (+${formatCompact((totals.baseIncomePerSec * 0.14) / cur, "$")}/${sec})`;
   }
   if (def.kind === "dam") {
-    const cur = 1 + lvl * 0.35;
-    const nxt = 1 + (lvl + 1) * 0.35;
-    return `${en ? "Output" : "Мощь"}: x${cur.toFixed(2)} → x${nxt.toFixed(2)} (+${formatCompact((totals.baseIncomePerSec * 0.35) / cur, "$")}/${sec})`;
+    const cur = 1 + lvl * 0.22;
+    const nxt = 1 + (lvl + 1) * 0.22;
+    return `${en ? "Output" : "Мощь"}: x${cur.toFixed(2)} → x${nxt.toFixed(2)} (+${formatCompact((totals.baseIncomePerSec * 0.22) / cur, "$")}/${sec})`;
   }
   if (def.kind === "tap") {
     const curTap = totals.tapBonus;
-    const nxtTap = curTap * ((1 + (lvl + 1) * 0.5) / (1 + lvl * 0.5));
+    const nxtTap = curTap * ((1 + (lvl + 1) * 0.35) / (1 + lvl * 0.35));
     return `${en ? "River Tap" : "Клик по воде"}: ${formatCompact(curTap, "$")} → ${formatCompact(nxtTap, "$")}`;
   }
   if (def.kind === "tariff") {
-    const cur = 1 + lvl * 0.4;
-    const nxt = 1 + (lvl + 1) * 0.4;
-    return `${en ? "Tariff" : "Тариф"}: x${cur.toFixed(1)} → x${nxt.toFixed(1)} (+${formatCompact((totals.baseIncomePerSec * 0.4) / cur, "$")}/${sec})`;
+    const cur = 1 + lvl * 0.25;
+    const nxt = 1 + (lvl + 1) * 0.25;
+    return `${en ? "Tariff" : "Тариф"}: x${cur.toFixed(2)} → x${nxt.toFixed(2)} (+${formatCompact((totals.baseIncomePerSec * 0.25) / cur, "$")}/${sec})`;
   }
   return def.targetLabel;
 }
@@ -495,7 +497,7 @@ export function buyBoosterAction(state, boosterId, payWith = "cash") {
 
   if (def.id === "cash_pack") {
     const { effectiveIncomePerSec } = getTotals(state);
-    const grant = Math.max(500, Math.floor(effectiveIncomePerSec * 120));
+    const grant = Math.max(250, Math.floor(effectiveIncomePerSec * 60));
     state.cash += grant;
     state.runCash += grant;
     state.lifetimeCash += grant;
@@ -655,7 +657,7 @@ export function collectRiverEventReward(state, eventType) {
     state.crystals = (state.crystals || 0) + crystals;
     return { type: "drone", cash: 0, crystals };
   }
-  const cash = Math.max(120 * getActiveZone(state).incomeMult, Math.floor(effectiveIncomePerSec * 45));
+  const cash = Math.max(120 * getActiveZone(state).incomeMult, Math.floor(effectiveIncomePerSec * 25));
   state.cash += cash;
   state.runCash += cash;
   state.lifetimeCash += cash;
@@ -697,7 +699,7 @@ export function tickEconomy(state, dtSeconds) {
   }
 
   const overdriveMult = getOverdriveMultiplier(state);
-  const rainMult = (state.boosters?.rain_2x || 0) > 0 ? 1.6 : 1;
+  const rainMult = (state.boosters?.rain_2x || 0) > 0 ? 1.5 : 1;
   const flowFactor = 1 + (state.upgrades.u0 || 0) * 0.08;
   const speedBoost = flowFactor * overdriveMult * rainMult;
   const payouts = [];
@@ -803,7 +805,7 @@ export function loadState() {
 
     const elapsedSec = Math.min(8 * 3600, Math.max(0, (Date.now() - (parsed.lastSavedAt || Date.now())) / 1000));
     const { baseIncomePerSec } = getTotals(fresh);
-    const offlineMult = 0.5 + (fresh.shopPerks?.offline_amp || 0) * 0.25;
+    const offlineMult = 0.35 + (fresh.shopPerks?.offline_amp || 0) * 0.15;
     const offlineEarned = elapsedSec >= 10 ? baseIncomePerSec * elapsedSec * offlineMult : 0;
     if (offlineEarned > 0) {
       fresh.cash += offlineEarned;

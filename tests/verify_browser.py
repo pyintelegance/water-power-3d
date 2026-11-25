@@ -71,6 +71,7 @@ def main():
                 window.__WATER_POWER_DEBUG__.setLang('en');
                 window.__WATER_POWER_DEBUG__.state.stations.s0.level = 55;
                 window.__WATER_POWER_DEBUG__.grantCash(50000);
+                window.__WATER_POWER_DEBUG__.world.render(window.__WATER_POWER_DEBUG__.state);
             }""")
             page.wait_for_timeout(250)
             tab_txt = page.locator(".tab-btn[data-tab='stations']").inner_text().strip()

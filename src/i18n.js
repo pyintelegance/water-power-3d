@@ -332,7 +332,7 @@ const CONTENT_EN = {
     turbo_3x: { name: "Turbo Surge x3", desc: "Triple income from all dams for 30s" },
     rain_2x: { name: "Storm Deluge x2", desc: "Canyon storm: x2 speed & output (60s)" },
     auto_tap: { name: "Auto-Tap Drone", desc: "Auto-taps river 3x/sec (45s)" },
-    cash_pack: { name: "Venture Fund", desc: "Instant +120s of income (min $500)" }
+    cash_pack: { name: "Venture Fund", desc: "Instant +60s of income (min $250)" }
   },
   perks: {
     gold_blades: { name: "Titanium Blades", desc: "+50% permanent income across all chapters" },

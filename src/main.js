@@ -208,7 +208,7 @@ function applyStaticTranslations() {
 }
 
 function getComboMult() {
-  return 1 + Math.min(4, Math.floor(tapCombo / 4) * 0.5);
+  return 1 + Math.min(1.5, Math.floor(tapCombo / 5) * 0.25);
 }
 
 function registerTapCombo() {
