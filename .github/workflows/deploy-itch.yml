@@ -1,0 +1,28 @@
+name: Deploy HTML5 Game to itch.io
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy-itch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Build single-file HTML5 bundle
+        run: |
+          npm ci
+          npm run pack:web
+      - name: Install itch.io Butler & Push HTML5
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+        run: |
+          curl -L -o butler.zip https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default
+          unzip -q butler.zip -d butler_bin
+          chmod +x butler_bin/butler
+          ./butler_bin/butler -V
+          ./butler_bin/butler push portal_build pyintelegance/water-power-3d:html5 --userversion "1.0.${{ github.run_number }}"
