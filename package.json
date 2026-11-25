@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "pack:web": "vite build && node scripts/pack_web.mjs",
     "preview": "vite preview",
     "cap:sync": "vite build && npx cap sync android"
   },
