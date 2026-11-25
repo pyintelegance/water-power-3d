@@ -43,9 +43,12 @@ export class WaterPowerWorld {
     this.clock = new THREE.Clock();
     this.presetIndex = 0;
 
-    // Camera preset + optional hand-panning state (no rotation)
+    // Camera preset + optional hand-panning & wheel zoom state (no rotation)
     this.panEnabled = false;
     this.panOffset = new THREE.Vector3(0, 0, 0);
+    this.zoomScale = 1.0;
+    this.desiredZoomScale = 1.0;
+    this.keysHeld = new Set();
     this.cameraPos = CAMERA_PRESETS[0].pos.clone();
     this.targetOffset = CAMERA_PRESETS[0].target.clone();
     this.desiredCameraPos = CAMERA_PRESETS[0].pos.clone();
@@ -132,19 +135,19 @@ export class WaterPowerWorld {
     const cliffMat = this.cliffMat;
     const sandMat = this.sandMat;
 
-    // Base valley slab
-    addBox(this.scene, 44, 3, 40, 2, -1.7, 0, flatMat("#1e293b", 0.95), false);
+    // Base valley slab (expanded for 16:9 PC widescreen)
+    addBox(this.scene, 72, 3, 64, 2, -1.7, 0, flatMat("#1e293b", 0.95), false);
 
     // Right green plateau (City side)
-    addBox(this.scene, 18, 1.2, 32, 9.5, -0.2, 0, grassMat, true);
+    addBox(this.scene, 30, 1.2, 46, 15.5, -0.2, 0, grassMat, true);
     // Left hilly canyon bank
-    addBox(this.scene, 14, 1.8, 32, -10.5, 0.1, 0, darkGrassMat, true);
-    addBox(this.scene, 11, 3.6, 16, -11.5, 1.4, -7, rockMat, true);
+    addBox(this.scene, 26, 1.8, 46, -16.5, 0.1, 0, darkGrassMat, true);
+    addBox(this.scene, 18, 3.6, 22, -15.0, 1.4, -7, rockMat, true);
 
     // Upper Reservoir Plateau (North / -Z)
-    addBox(this.scene, 34, 4.4, 12, 0, 1.6, -15, cliffMat, true);
-    addBox(this.scene, 12, 0.4, 12, 9.5, 3.85, -15, darkGrassMat, true);
-    addBox(this.scene, 12, 0.4, 12, -10.5, 3.85, -15, rockMat, true);
+    addBox(this.scene, 56, 4.4, 18, 0, 1.6, -18, cliffMat, true);
+    addBox(this.scene, 22, 0.4, 18, 14.5, 3.85, -18, darkGrassMat, true);
+    addBox(this.scene, 22, 0.4, 18, -15.5, 3.85, -18, rockMat, true);
 
     // Riverbed sand banks
     addBox(this.scene, 6.2, 0.35, 25, -1.2, -0.35, 3, sandMat, false);
@@ -594,9 +597,23 @@ export class WaterPowerWorld {
     this.presetIndex = safeIdx;
     const preset = CAMERA_PRESETS[safeIdx];
     this.panOffset.set(0, 0, 0);
-    this.desiredCameraPos.copy(preset.pos);
-    this.desiredTarget.copy(preset.target);
+    this.desiredZoomScale = 1.0;
+    this.updateDesiredCamera();
     return preset.name;
+  }
+
+  updateDesiredCamera() {
+    const preset = CAMERA_PRESETS[this.presetIndex];
+    const baseTarget = preset.target.clone().add(this.panOffset);
+    const offset = preset.pos.clone().sub(preset.target).multiplyScalar(this.desiredZoomScale);
+    this.desiredTarget.copy(baseTarget);
+    this.desiredCameraPos.copy(baseTarget).add(offset);
+  }
+
+  panByDelta(dxWorld, dzWorld) {
+    this.panOffset.x = THREE.MathUtils.clamp(this.panOffset.x + dxWorld, -13, 15);
+    this.panOffset.z = THREE.MathUtils.clamp(this.panOffset.z + dzWorld, -15, 14);
+    this.updateDesiredCamera();
   }
 
   triggerStationPulse(stationId) {
@@ -645,12 +662,7 @@ export class WaterPowerWorld {
       // Pure camera translation (panning along XZ, never rotating)
       const stepX = (-dx * 0.035) - (dy * 0.02);
       const stepZ = (-dy * 0.035) + (dx * 0.02);
-      this.panOffset.x = THREE.MathUtils.clamp(this.panOffset.x + stepX, -11, 13);
-      this.panOffset.z = THREE.MathUtils.clamp(this.panOffset.z + stepZ, -13, 12);
-
-      const preset = CAMERA_PRESETS[this.presetIndex];
-      this.desiredCameraPos.copy(preset.pos).add(this.panOffset);
-      this.desiredTarget.copy(preset.target).add(this.panOffset);
+      this.panByDelta(stepX, stepZ);
     });
 
     window.addEventListener("pointerup", (e) => {
@@ -671,6 +683,33 @@ export class WaterPowerWorld {
           this.onTapWorld(e.clientX, e.clientY);
         }
       }
+    });
+
+    // Mouse wheel zoom (pure distance scale, no rotation)
+    this.canvas.addEventListener(
+      "wheel",
+      (e) => {
+        e.preventDefault();
+        this.desiredZoomScale = THREE.MathUtils.clamp(
+          this.desiredZoomScale + e.deltaY * 0.0008,
+          0.6,
+          1.55
+        );
+        this.updateDesiredCamera();
+      },
+      { passive: false }
+    );
+
+    // Keyboard WASD / Arrow camera pan (ignore while typing in inputs)
+    window.addEventListener("keydown", (e) => {
+      if (e.target && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")) return;
+      this.keysHeld.add(e.code);
+    });
+    window.addEventListener("keyup", (e) => {
+      this.keysHeld.delete(e.code);
+    });
+    window.addEventListener("blur", () => {
+      this.keysHeld.clear();
     });
   }
 
@@ -695,6 +734,18 @@ export class WaterPowerWorld {
     const { totalWatts, overdriveMult } = getTotals(state);
     const rainSpeed = (state.boosters?.rain_2x || 0) > 0 ? 1.55 : 1;
     const flowSpeed = (1 + state.upgrades.riverFlow * 0.14) * overdriveMult * rainSpeed;
+
+    // Keyboard WASD / Arrow camera pan
+    let kx = 0;
+    let kz = 0;
+    if (this.keysHeld.has("KeyW") || this.keysHeld.has("ArrowUp")) kz -= 1;
+    if (this.keysHeld.has("KeyS") || this.keysHeld.has("ArrowDown")) kz += 1;
+    if (this.keysHeld.has("KeyA") || this.keysHeld.has("ArrowLeft")) kx -= 1;
+    if (this.keysHeld.has("KeyD") || this.keysHeld.has("ArrowRight")) kx += 1;
+    if (kx !== 0 || kz !== 0) {
+      const speed = 14 * dt;
+      this.panByDelta((kx * 0.72 + kz * 0.68) * speed, (kz * 0.72 - kx * 0.68) * speed);
+    }
 
     // Smooth preset camera transition
     this.cameraPos.lerp(this.desiredCameraPos, 0.12);

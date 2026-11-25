@@ -524,13 +524,86 @@ body.goal-collapsed .mid-controls {
   gap: 8px;
 }
 
-@media (min-width: 720px) {
+.pc-hints {
+  display: none;
+}
+
+@media (min-width: 720px) and (max-width: 1023px) {
   .cards-list { grid-template-columns: repeat(2, 1fr); }
   .drawer {
     max-width: 800px;
     margin: 0 auto;
     border-left: 1px solid var(--panel-border);
     border-right: 1px solid var(--panel-border);
+  }
+}
+
+/* Desktop / PC Widescreen Layout (>= 1024px) */
+@media (min-width: 1024px) {
+  .top-hud {
+    left: 14px;
+    right: 416px;
+    max-width: 680px;
+  }
+
+  .goal-banner {
+    left: 14px;
+    right: 416px;
+    margin: 0;
+    max-width: 680px;
+  }
+
+  .mid-controls {
+    margin: calc(max(10px, var(--safe-top)) + 148px) 0 0 14px;
+    width: auto;
+    max-width: 680px;
+    margin-right: 416px;
+  }
+
+  body.goal-collapsed .mid-controls {
+    margin-top: calc(max(10px, var(--safe-top)) + 90px);
+  }
+
+  .drawer {
+    top: 12px;
+    right: 12px;
+    bottom: 12px;
+    left: auto;
+    width: 392px;
+    border-radius: 20px;
+    border: 1px solid var(--panel-border);
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 10px;
+  }
+
+  .drawer.collapsed {
+    bottom: auto;
+    height: auto;
+  }
+
+  .drawer-body {
+    flex: 1;
+    max-height: none;
+    overflow-y: auto;
+  }
+
+  .pc-hints {
+    display: flex;
+    gap: 8px;
+    position: absolute;
+    left: 14px;
+    bottom: 12px;
+    z-index: 15;
+    background: rgba(11, 27, 43, 0.78);
+    border: 1px solid var(--panel-border);
+    backdrop-filter: blur(8px);
+    padding: 6px 12px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    pointer-events: none;
   }
 }
 

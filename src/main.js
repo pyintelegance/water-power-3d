@@ -37,10 +37,21 @@ import {
   triggerPrestige
 } from "./economy.js";
 import { SoundEngine } from "./audio.js";
+import { PlatformBridge } from "./platform.js";
 import { WaterPowerWorld } from "./world.js";
 
 const { state, offlineEarned, offlineSeconds } = loadState();
 const sound = new SoundEngine();
+let userMuted = false;
+const platform = new PlatformBridge((paused) => {
+  if (paused) {
+    sound.setEnabled(false);
+    saveState(state);
+  } else {
+    sound.setEnabled(!userMuted);
+  }
+});
+void platform;
 
 let activeTab = "stations";
 let buyMult = "x1";
@@ -648,9 +659,41 @@ profileNameInput.addEventListener("input", () => {
 });
 
 btnSound.addEventListener("click", () => {
-  const next = !sound.enabled;
-  sound.setEnabled(next);
-  btnSound.textContent = next ? "🔊" : "🔇";
+  userMuted = !userMuted;
+  sound.setEnabled(!userMuted);
+  btnSound.textContent = !userMuted ? "🔊" : "🔇";
+});
+
+// PC Keyboard shortcuts (Space = tap, 1-4 = tabs, Q = cycle camera)
+window.addEventListener("keydown", (e) => {
+  if (e.target && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")) return;
+
+  if (e.code === "Space") {
+    e.preventDefault();
+    const earned = applyTap(state);
+    sound.playTap();
+    const rect = canvas.getBoundingClientRect();
+    const x = rect.left + rect.width * (window.innerWidth >= 1024 ? 0.34 : 0.45);
+    const y = rect.top + rect.height * 0.5;
+    spawnTapText(x, y, earned);
+    world.spawnSplash(-1.2, 0.5, 2.0, 8);
+    updateHudAndButtons();
+    return;
+  }
+
+  const tabMap = { Digit1: "stations", Digit2: "upgrades", Digit3: "shop", Digit4: "prestige" };
+  if (tabMap[e.code]) {
+    const targetBtn = document.querySelector(`.tab-btn[data-tab='${tabMap[e.code]}']`);
+    if (targetBtn) targetBtn.click();
+    return;
+  }
+
+  if (e.code === "KeyQ") {
+    const camBtns = Array.from(document.querySelectorAll(".cam-btn"));
+    const curIdx = camBtns.findIndex((b) => b.classList.contains("active"));
+    const nextBtn = camBtns[(curIdx + 1) % camBtns.length];
+    if (nextBtn) nextBtn.click();
+  }
 });
 
 btnClaimOffline.addEventListener("click", () => {
