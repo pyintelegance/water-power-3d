@@ -23,7 +23,7 @@
     <!-- Top HUD -->
     <header class="top-hud">
       <div class="stat-pill cash-pill">
-        <span class="stat-icon">💧</span>
+        <span class="stat-icon" id="hud-cash-icon"></span>
         <div class="stat-text">
           <div class="stat-main" id="hud-cash">$0</div>
           <div class="stat-sub" id="hud-income">+$0/с</div>
@@ -31,23 +31,26 @@
       </div>
 
       <div class="stat-pill power-pill">
-        <span class="stat-icon">⚡</span>
+        <span class="stat-icon" id="hud-power-icon"></span>
         <div class="stat-text">
           <div class="stat-main" id="hud-watts">0 W</div>
           <div class="stat-sub" id="hud-era">Лагерь у ручья</div>
         </div>
       </div>
 
-      <div class="crystal-pill" id="hud-crystals" title="Энерго-кристаллы">💎 5</div>
+      <div class="crystal-pill" id="hud-crystals" title="Энерго-кристаллы">
+        <span id="hud-crystal-icon"></span>
+        <span id="hud-crystal-val">5</span>
+      </div>
 
-      <button class="icon-btn" id="btn-profile" title="Профиль" aria-label="Профиль">👤</button>
-      <button class="icon-btn" id="btn-sound" title="Звук" aria-label="Звук">🔊</button>
+      <button class="icon-btn" id="btn-profile" title="Профиль" aria-label="Профиль"></button>
+      <button class="icon-btn" id="btn-sound" title="Звук" aria-label="Звук"></button>
     </header>
 
     <!-- Collapsible Grand Goal + Zone Bar -->
     <div class="goal-banner" id="goal-banner">
       <div class="goal-head">
-        <span class="goal-title" id="goal-title">🎯 ЦЕЛЬ 1/6: Зажечь свет в деревне</span>
+        <span class="goal-title" id="goal-title">ЦЕЛЬ 1/4: Осветить деревню</span>
         <div class="goal-head-right">
           <span class="goal-numbers" id="goal-numbers">10 W / 120 W</span>
           <button class="mini-collapse-btn" id="btn-goal-collapse" title="Свернуть цель">▾</button>
@@ -57,8 +60,8 @@
         <div class="goal-track">
           <div class="goal-fill" id="goal-fill"></div>
         </div>
-        <div class="goal-sub" id="goal-sub">Награда: +$95 · +3 💎</div>
-        <button class="advance-zone-btn hidden" id="btn-advance-zone">🚀 Перейти в новую локацию!</button>
+        <div class="goal-sub" id="goal-sub">Награда: +$95 · +3 кристалла</div>
+        <button class="advance-zone-btn hidden" id="btn-advance-zone">Перейти в новую локацию</button>
         <div class="zone-strip" id="zone-strip"></div>
       </div>
     </div>
@@ -67,38 +70,38 @@
     <div class="mid-controls">
       <div class="overdrive-bar">
         <div class="overdrive-fill" id="overdrive-fill"></div>
-        <span class="overdrive-label" id="overdrive-label">⚡ ТАПАЙ ПО ВОДЕ ДЛЯ РАЗГОНА (x1.0)</span>
+        <span class="overdrive-label" id="overdrive-label">ТАПАЙ ПО ВОДЕ ДЛЯ РАЗГОНА (x1.0)</span>
       </div>
 
       <div class="cam-bar" role="group" aria-label="Управление камерой">
-        <button class="cam-btn active" data-cam="0">🌍 Обзор</button>
-        <button class="cam-btn" data-cam="1">🎡 Станции</button>
-        <button class="cam-btn" data-cam="3">🏙️ Город</button>
-        <button class="pan-toggle-btn" id="btn-pan-toggle" aria-pressed="false">✋ Двигать: ВЫКЛ</button>
+        <button class="cam-btn active" data-cam="0">Обзор</button>
+        <button class="cam-btn" data-cam="1">Станции</button>
+        <button class="cam-btn" data-cam="3">Город</button>
+        <button class="pan-toggle-btn" id="btn-pan-toggle" aria-pressed="false">Сдвиг: ВЫКЛ</button>
       </div>
 
       <div class="active-boosters hidden" id="active-boosters"></div>
     </div>
 
-    <!-- Goal / Era / Zone Toast -->
+    <!-- Toast -->
     <div class="era-toast hidden" id="era-toast">
-      <span class="era-toast-badge" id="era-toast-badge">ЦЕЛЬ ВЫПОЛНЕНА!</span>
+      <span class="era-toast-badge" id="era-toast-badge">ЦЕЛЬ ВЫПОЛНЕНА</span>
       <strong id="era-toast-title">Деревня у воды</strong>
     </div>
 
     <!-- Desktop Controls Hint (visible >= 1024px) -->
     <div class="pc-hints" aria-hidden="true">
-      <span>Пробел — тап</span> · <span>WASD — камера</span> · <span>Колёсико — зум</span> · <span>1–4 — меню</span>
+      <span>Пробел — импульс</span> · <span>WASD — камера</span> · <span>Колёсико — зум</span> · <span>1–4 — вкладки</span>
     </div>
 
-    <!-- Bottom Interactive Drawer -->
+    <!-- Bottom / Sidebar Interactive Drawer -->
     <section class="drawer" id="drawer">
       <div class="drawer-header">
         <div class="tabs" role="tablist">
-          <button class="tab-btn active" data-tab="stations" role="tab">⚙️ Станции</button>
-          <button class="tab-btn" data-tab="upgrades" role="tab">🌊 Апгрейды</button>
-          <button class="tab-btn" data-tab="shop" role="tab">🛒 Магазин</button>
-          <button class="tab-btn" data-tab="prestige" role="tab">👷 Инженеры</button>
+          <button class="tab-btn active" data-tab="stations" role="tab">Станции</button>
+          <button class="tab-btn" data-tab="upgrades" role="tab">Апгрейды</button>
+          <button class="tab-btn" data-tab="shop" role="tab">Магазин</button>
+          <button class="tab-btn" data-tab="prestige" role="tab">Штат</button>
         </div>
         <div class="drawer-controls">
           <button class="mult-btn" id="btn-buy-mult">x1</button>
@@ -115,7 +118,7 @@
     <div class="modal-backdrop hidden" id="profile-modal">
       <div class="modal-card profile-card">
         <div class="modal-head-row">
-          <h2>👤 Профиль игрока</h2>
+          <h2>Профиль энергетика</h2>
           <button class="mini-close-btn" id="btn-close-profile">✕</button>
         </div>
 
@@ -126,14 +129,14 @@
             id="profile-name-input"
             class="profile-name-input"
             maxlength="20"
-            placeholder="Ваш никнейм"
+            placeholder="Ваш позывной"
           />
           <div class="profile-rank" id="profile-rank">Стажёр на ручье</div>
         </div>
 
         <div class="profile-stats-grid" id="profile-stats-grid"></div>
 
-        <h3 class="ach-heading">🏆 Достижения (награда 💎)</h3>
+        <h3 class="ach-heading">Достижения</h3>
         <div class="ach-list" id="ach-list"></div>
       </div>
     </div>
@@ -141,17 +144,17 @@
     <!-- Zone Transition Modal -->
     <div class="modal-backdrop hidden" id="zone-modal">
       <div class="modal-card">
-        <div class="modal-emoji" id="zone-modal-emoji">❄️🚀</div>
+        <div class="modal-icon-hero" id="zone-modal-icon"></div>
         <h2 id="zone-modal-title">Переход в новую локацию</h2>
         <p class="modal-desc" id="zone-modal-desc"></p>
         <div class="zone-reset-box">
-          <div>🔄 Деньги, станции и локальные апгрейды начнутся заново</div>
-          <div>✨ Откроются <strong>6 новых станций</strong> и <strong>4 новых улучшения</strong></div>
-          <div>💎 Кристаллы, инженеры, магазин и профиль сохраняются + бонус!</div>
+          <div>• Деньги, станции и локальные апгрейды стартуют заново</div>
+          <div>• Откроются <strong>6 новых станций</strong> и <strong>4 новых улучшения</strong></div>
+          <div>• Кристаллы, инженеры, магазин и профиль сохраняются + бонус</div>
         </div>
         <div class="modal-actions-row">
-          <button class="secondary-btn" id="btn-cancel-zone">Пока остаться</button>
-          <button class="primary-btn" id="btn-confirm-zone">Перейти!</button>
+          <button class="secondary-btn" id="btn-cancel-zone">Остаться</button>
+          <button class="primary-btn" id="btn-confirm-zone">Перейти</button>
         </div>
       </div>
     </div>
@@ -159,11 +162,11 @@
     <!-- Offline Income Modal -->
     <div class="modal-backdrop hidden" id="offline-modal">
       <div class="modal-card">
-        <div class="modal-emoji">🌊⚡</div>
-        <h2>Станция работала без вас!</h2>
+        <div class="modal-icon-hero" id="offline-icon"></div>
+        <h2>Станция работала автономно</h2>
         <p class="modal-desc" id="offline-time">Прошло 0 мин</p>
         <div class="modal-reward" id="offline-reward">+$0</div>
-        <button class="primary-btn" id="btn-claim-offline">Забрать прибыль</button>
+        <button class="primary-btn" id="btn-claim-offline">Забрать доход</button>
       </div>
     </div>
   </div>

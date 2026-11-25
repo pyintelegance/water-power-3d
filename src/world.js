@@ -67,10 +67,14 @@ export class WaterPowerWorld {
     this.snowPool = [];
     this.trees = [];
     this.cyberRings = [];
+    this.vehicles = [];
+    this.stationMats = null;
 
     this.initRenderer();
     this.initScene();
+    this.initStationMaterials();
     this.buildTerrainAndRiver();
+    this.buildBridge();
     this.buildZoneLandmarks();
     this.buildStations();
     this.buildPowerLines();
@@ -80,6 +84,19 @@ export class WaterPowerWorld {
     this.buildSnowParticles();
     this.bindInput();
     this.resize();
+  }
+
+  initStationMaterials() {
+    this.stationMats = {
+      wood: flatMat("#8b4513", 0.75, 0.1),
+      metal: flatMat("#475569", 0.42, 0.55),
+      concrete: flatMat("#cbd5e1", 0.72, 0.1),
+      accent: flatMat("#0284c7", 0.35, 0.35),
+      blade: flatMat("#38bdf8", 0.35, 0.25),
+      copper: flatMat("#d97706", 0.38, 0.6),
+      glow: flatMat("#38bdf8", 0.15, 0.1, { emissive: "#0ea5e9", emissiveIntensity: 0.9 }),
+      coreGlow: flatMat("#67e8f9", 0.1, 0.1, { emissive: "#22d3ee", emissiveIntensity: 1.35 })
+    };
   }
 
   initRenderer() {
@@ -153,8 +170,14 @@ export class WaterPowerWorld {
     addBox(this.scene, 22, 0.4, 18, 14.5, 3.85, -18, darkGrassMat, true);
     addBox(this.scene, 22, 0.4, 18, -15.5, 3.85, -18, rockMat, true);
 
-    // Riverbed sand banks
+    // Riverbed sand banks & engineered stone retaining walls
     addBox(this.scene, 6.2, 0.35, 25, -1.2, -0.35, 3, sandMat, false);
+    addBox(this.scene, 0.45, 0.95, 24.5, -4.15, 0.15, 3.2, cliffMat, true);
+    addBox(this.scene, 0.45, 0.95, 24.5, 1.75, 0.15, 3.2, cliffMat, true);
+
+    // Stepped canyon rock ledges on left cliff
+    addBox(this.scene, 8.5, 1.1, 14, -7.8, 1.25, -13.5, rockMat, true);
+    addBox(this.scene, 6.0, 0.85, 10, -8.5, 0.95, 2.5, rockMat, true);
 
     // Upper river water
     this.waterMat = new THREE.MeshStandardMaterial({
@@ -236,12 +259,33 @@ export class WaterPowerWorld {
     }
   }
 
-  createWheelMesh(blades, radius, width, rimColor, bladeColor) {
-    const wheel = new THREE.Group();
-    const rimMat = flatMat(rimColor, 0.5, 0.35);
-    const bladeMat = flatMat(bladeColor, 0.65, 0.15);
+  buildBridge() {
+    const bridge = new THREE.Group();
+    bridge.position.set(-1.2, 0, 9.6);
+    const stone = flatMat("#64748b", 0.85);
+    const deck = flatMat("#94a3b8", 0.7);
+    const rail = flatMat("#334155", 0.5, 0.4);
+    const lampGlow = flatMat("#fde047", 0.2, 0.1, { emissive: "#facc15", emissiveIntensity: 1.0 });
 
-    const ring1 = new THREE.Mesh(new THREE.TorusGeometry(radius, 0.09, 6, 16), rimMat);
+    // Stone piers & arched deck over river
+    addBox(bridge, 1.1, 1.4, 2.0, -3.2, 0.4, 0, stone);
+    addBox(bridge, 1.1, 1.4, 2.0, 3.2, 0.4, 0, stone);
+    addBox(bridge, 7.6, 0.32, 1.9, 0, 1.15, 0, deck);
+    addBox(bridge, 7.6, 0.35, 0.14, 0, 1.48, 0.86, rail);
+    addBox(bridge, 7.6, 0.35, 0.14, 0, 1.48, -0.86, rail);
+
+    // Bridge lanterns
+    for (const lx of [-2.6, 2.6]) {
+      addCyl(bridge, 0.06, 0.08, 1.1, 6, lx, 1.85, 0.86, rail);
+      addBox(bridge, 0.22, 0.24, 0.22, lx, 2.45, 0.86, lampGlow, false);
+    }
+    this.scene.add(bridge);
+  }
+
+  createWheelMesh(blades, radius, width, rimMat, bladeMat) {
+    const wheel = new THREE.Group();
+
+    const ring1 = new THREE.Mesh(new THREE.TorusGeometry(radius, 0.09, 6, 18), rimMat);
     ring1.rotation.y = Math.PI / 2;
     ring1.position.x = -width * 0.42;
     ring1.castShadow = true;
@@ -251,13 +295,13 @@ export class WaterPowerWorld {
     ring2.position.x = width * 0.42;
     wheel.add(ring2);
 
-    const axle = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, width + 0.5, 8), rimMat);
+    const axle = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, width + 0.55, 8), rimMat);
     axle.rotation.z = Math.PI / 2;
     wheel.add(axle);
 
     for (let i = 0; i < blades; i += 1) {
       const angle = (i / blades) * Math.PI * 2;
-      const paddle = new THREE.Mesh(new THREE.BoxGeometry(width * 0.9, 0.08, radius * 0.62), bladeMat);
+      const paddle = new THREE.Mesh(new THREE.BoxGeometry(width * 0.9, 0.09, radius * 0.62), bladeMat);
       paddle.position.set(0, Math.cos(angle) * radius * 0.78, Math.sin(angle) * radius * 0.78);
       paddle.rotation.x = -angle;
       paddle.castShadow = true;
@@ -277,6 +321,8 @@ export class WaterPowerWorld {
       opacity: 0.35
     });
 
+    const m = this.stationMats;
+
     getZoneStations("valley").forEach((def, idx) => {
       const z = zPositions[idx];
       const y = yPositions[idx];
@@ -293,63 +339,54 @@ export class WaterPowerWorld {
       let extraSpinner = null;
 
       if (idx === 0) {
-        const wood = flatMat("#92400e");
-        const iron = flatMat("#475569", 0.4, 0.5);
-        addBox(model, 0.3, 1.7, 0.3, -1.35, 0.65, 0, wood);
-        addBox(model, 0.3, 1.7, 0.3, 1.35, 0.65, 0, wood);
-        addBox(model, 0.9, 0.8, 0.9, 1.85, 0.55, 0, iron);
-        spinner = this.createWheelMesh(8, 1.05, 1.5, "#78350f", "#b45309");
-        spinner.position.set(0, 1.05, 0);
+        addBox(model, 0.3, 1.75, 0.32, -1.35, 0.68, 0, m.wood);
+        addBox(model, 0.3, 1.75, 0.32, 1.35, 0.68, 0, m.wood);
+        addBox(model, 1.05, 0.85, 1.05, 1.95, 0.55, 0, m.metal);
+        addBox(model, 0.35, 0.35, 0.35, 1.95, 1.1, 0, m.glow, false);
+        spinner = this.createWheelMesh(8, 1.08, 1.5, m.wood, m.copper);
+        spinner.position.set(0, 1.08, 0);
         model.add(spinner);
       } else if (idx === 1) {
-        const stone = flatMat("#64748b");
-        const copper = flatMat("#d97706", 0.4, 0.6);
-        addBox(model, 0.45, 2.0, 0.7, -1.6, 0.75, 0, stone);
-        addBox(model, 0.45, 2.0, 0.7, 1.6, 0.75, 0, stone);
-        addBox(model, 1.1, 1.0, 1.2, 2.2, 0.6, 0, copper);
-        spinner = this.createWheelMesh(10, 1.15, 0.9, "#334155", "#0284c7");
+        addBox(model, 0.45, 2.05, 0.75, -1.65, 0.78, 0, m.concrete);
+        addBox(model, 0.45, 2.05, 0.75, 1.65, 0.78, 0, m.concrete);
+        addBox(model, 1.25, 1.05, 1.3, 2.25, 0.62, 0, m.copper);
+        addBox(model, 0.45, 0.25, 0.45, 2.25, 1.25, 0, m.glow, false);
+        spinner = this.createWheelMesh(10, 1.15, 0.9, m.metal, m.blade);
         spinner.position.set(-0.65, 1.15, 0);
-        extraSpinner = this.createWheelMesh(10, 1.15, 0.9, "#334155", "#0284c7");
+        extraSpinner = this.createWheelMesh(10, 1.15, 0.9, m.metal, m.blade);
         extraSpinner.position.set(0.65, 1.15, 0);
         model.add(spinner, extraSpinner);
       } else if (idx === 2) {
-        const steel = flatMat("#cbd5e1", 0.35, 0.65);
-        const cyanGlow = flatMat("#06b6d4", 0.2, 0.2, { emissive: "#0ea5e9", emissiveIntensity: 0.7 });
-        addBox(model, 3.6, 0.4, 1.4, 0, 0.2, 0, flatMat("#334155"));
-        addBox(model, 1.2, 1.4, 1.4, 2.1, 0.85, 0, steel);
-        addBox(model, 0.3, 0.3, 0.3, 2.1, 1.65, 0, cyanGlow);
-        spinner = this.createWheelMesh(12, 1.2, 1.2, "#0284c7", "#38bdf8");
+        addBox(model, 3.8, 0.42, 1.45, 0, 0.2, 0, m.metal);
+        addBox(model, 1.35, 1.5, 1.45, 2.15, 0.9, 0, m.concrete);
+        addBox(model, 0.9, 0.35, 0.9, 2.15, 1.75, 0, m.accent);
+        addBox(model, 0.35, 0.25, 0.35, 2.15, 2.0, 0, m.glow, false);
+        spinner = this.createWheelMesh(12, 1.22, 1.25, m.accent, m.blade);
         spinner.position.set(-0.2, 1.25, 0);
         model.add(spinner);
       } else if (idx === 3) {
-        const concrete = flatMat("#cbd5e1", 0.8);
-        const accent = flatMat("#0284c7", 0.4, 0.3);
-        const glow = flatMat("#38bdf8", 0.2, 0.1, { emissive: "#38bdf8", emissiveIntensity: 0.85 });
-        addBox(model, 5.8, 2.4, 1.3, 0, 1.0, 0, concrete);
-        addBox(model, 1.5, 0.95, 1.5, 2.2, 1.95, 0, accent);
-        addBox(model, 0.9, 0.25, 0.25, 0, 1.9, 0.65, glow);
-        spinner = this.createWheelMesh(14, 0.95, 1.6, "#1e293b", "#38bdf8");
-        spinner.position.set(-0.5, 0.95, 0.85);
+        addBox(model, 5.8, 2.45, 1.35, 0, 1.02, 0, m.concrete);
+        addBox(model, 1.55, 0.95, 1.55, 2.15, 1.98, 0, m.accent);
+        addBox(model, 1.1, 0.3, 0.28, 0, 1.95, 0.7, m.glow, false);
+        addBox(model, 0.35, 1.2, 0.35, -1.8, 1.2, 0.6, m.metal);
+        spinner = this.createWheelMesh(14, 0.98, 1.6, m.metal, m.blade);
+        spinner.position.set(-0.5, 0.98, 0.88);
         model.add(spinner);
       } else if (idx === 4) {
-        const whiteWall = flatMat("#f8fafc", 0.5, 0.2);
-        const neon = flatMat("#22d3ee", 0.15, 0.1, { emissive: "#06b6d4", emissiveIntensity: 1.0 });
-        addBox(model, 6.2, 3.1, 1.4, 0, 1.4, 0, whiteWall);
-        addBox(model, 1.1, 3.6, 1.1, -2.5, 1.6, 0, whiteWall);
-        addBox(model, 1.1, 3.6, 1.1, 2.5, 1.6, 0, whiteWall);
-        addBox(model, 4.2, 0.22, 0.22, 0, 2.6, 0.72, neon);
-        spinner = this.createWheelMesh(16, 1.05, 1.8, "#0ea5e9", "#67e8f9");
-        spinner.position.set(0, 1.05, 0.95);
+        addBox(model, 6.2, 3.15, 1.45, 0, 1.42, 0, m.concrete);
+        addBox(model, 1.15, 3.7, 1.15, -2.5, 1.65, 0, m.concrete);
+        addBox(model, 1.15, 3.7, 1.15, 2.5, 1.65, 0, m.concrete);
+        addBox(model, 4.3, 0.24, 0.24, 0, 2.65, 0.74, m.coreGlow, false);
+        spinner = this.createWheelMesh(16, 1.08, 1.85, m.accent, m.blade);
+        spinner.position.set(0, 1.08, 0.98);
         model.add(spinner);
       } else if (idx === 5) {
-        const darkMetal = flatMat("#0f172a", 0.3, 0.8);
-        const coreMat = flatMat("#67e8f9", 0.1, 0.1, { emissive: "#22d3ee", emissiveIntensity: 1.4 });
-        addCyl(model, 1.7, 2.0, 0.8, 8, 0, 0.3, 0, darkMetal);
-        const orb = new THREE.Mesh(new THREE.OctahedronGeometry(0.85, 0), coreMat);
-        orb.position.set(0, 2.1, 0);
+        addCyl(model, 1.75, 2.05, 0.85, 8, 0, 0.32, 0, m.metal);
+        const orb = new THREE.Mesh(new THREE.OctahedronGeometry(0.88, 0), m.coreGlow);
+        orb.position.set(0, 2.15, 0);
         model.add(orb);
-        const ring = new THREE.Mesh(new THREE.TorusGeometry(1.45, 0.09, 6, 20), coreMat);
-        ring.position.set(0, 2.1, 0);
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(1.5, 0.1, 6, 22), m.glow);
+        ring.position.set(0, 2.15, 0);
         ring.rotation.x = Math.PI / 3;
         model.add(ring);
         spinner = orb;
@@ -470,42 +507,59 @@ export class WaterPowerWorld {
     const windowGlow = flatMat("#fde047", 0.2, 0.1, { emissive: "#facc15", emissiveIntensity: 0.85 });
     const neonCyan = flatMat("#67e8f9", 0.1, 0.2, { emissive: "#22d3ee", emissiveIntensity: 1.2 });
 
-    // Era 0: Camp & Shack
+    // Era 0: Camp & Shack + Avenue & Streetlight
     const era0 = new THREE.Group();
-    const tent = new THREE.Mesh(new THREE.ConeGeometry(0.95, 1.1, 4), flatMat("#f97316"));
-    tent.position.set(-1.5, 0.55, 4.0);
+    const roadMat = flatMat("#334155", 0.9);
+    addBox(era0, 1.6, 0.08, 17.5, -1.8, 0.04, 0, roadMat, false);
+    const tent = new THREE.Mesh(new THREE.ConeGeometry(0.95, 1.15, 4), flatMat("#f97316"));
+    tent.position.set(-0.1, 0.58, 4.4);
     tent.rotation.y = Math.PI / 4;
     tent.castShadow = true;
     era0.add(tent);
-    addBox(era0, 1.6, 1.1, 1.4, 0.8, 0.55, 3.2, wood);
-    const shackRoof = new THREE.Mesh(new THREE.ConeGeometry(1.25, 0.75, 4), roofRed);
-    shackRoof.position.set(0.8, 1.45, 3.2);
+    addBox(era0, 1.7, 1.15, 1.5, 1.4, 0.58, 3.2, wood);
+    addBox(era0, 0.25, 0.6, 0.25, 1.9, 1.5, 2.8, flatMat("#64748b"));
+    const shackRoof = new THREE.Mesh(new THREE.ConeGeometry(1.38, 0.85, 4), roofRed);
+    shackRoof.position.set(1.4, 1.55, 3.2);
     shackRoof.rotation.y = Math.PI / 4;
     era0.add(shackRoof);
+    addBox(era0, 0.35, 0.38, 0.08, 1.4, 0.62, 3.97, windowGlow, false);
 
-    // Era 1: Cozy Village Houses
+    // Era 1: Cozy Village Houses + Streetlamps
     const era1 = new THREE.Group();
     const houseCoords = [
-      [-1.8, 0.2, roofBlue],
-      [1.4, -0.4, roofRed],
-      [-0.2, -3.5, roofBlue]
+      [-0.2, 0.2, roofBlue],
+      [2.1, -0.4, roofRed],
+      [0.4, -3.5, roofBlue]
     ];
     for (const [hx, hz, rMat] of houseCoords) {
-      addBox(era1, 1.6, 1.2, 1.5, hx, 0.6, hz, wallCream);
-      const roof = new THREE.Mesh(new THREE.ConeGeometry(1.3, 0.85, 4), rMat);
-      roof.position.set(hx, 1.6, hz);
+      addBox(era1, 1.65, 1.25, 1.55, hx, 0.62, hz, wallCream);
+      const roof = new THREE.Mesh(new THREE.ConeGeometry(1.36, 0.88, 4), rMat);
+      roof.position.set(hx, 1.68, hz);
       roof.rotation.y = Math.PI / 4;
       roof.castShadow = true;
       era1.add(roof);
-      addBox(era1, 0.35, 0.35, 0.08, hx, 0.7, hz + 0.76, windowGlow, false);
+      addBox(era1, 0.36, 0.38, 0.08, hx - 0.35, 0.72, hz + 0.79, windowGlow, false);
+      addBox(era1, 0.36, 0.38, 0.08, hx + 0.35, 0.72, hz + 0.79, windowGlow, false);
+      addBox(era1, 0.32, 0.56, 0.08, hx, 0.28, hz + 0.79, wood, false);
     }
 
-    // Era 2: Industrial Town
+    // Era 2: Industrial Town + Animated City Vehicles
     const era2 = new THREE.Group();
-    addBox(era2, 2.2, 2.4, 1.8, 3.2, 1.2, 2.0, brick);
-    addBox(era2, 1.5, 0.3, 0.1, 3.2, 1.8, 2.91, windowGlow, false);
-    addBox(era2, 2.0, 2.8, 2.0, -2.5, 1.4, -6.2, brick);
-    addBox(era2, 1.4, 0.35, 0.1, -2.5, 2.1, -5.18, windowGlow, false);
+    addBox(era2, 2.2, 2.5, 1.9, 3.2, 1.25, 2.0, brick);
+    addBox(era2, 1.5, 0.35, 0.1, 3.2, 1.85, 2.96, windowGlow, false);
+    addBox(era2, 1.5, 0.35, 0.1, 3.2, 1.15, 2.96, windowGlow, false);
+    addBox(era2, 2.1, 2.9, 2.1, -0.2, 1.45, -6.2, brick);
+    addBox(era2, 1.4, 0.35, 0.1, -0.2, 2.15, -5.12, windowGlow, false);
+
+    const carColors = ["#facc15", "#38bdf8", "#f472b6"];
+    for (let ci = 0; ci < 3; ci += 1) {
+      const car = new THREE.Group();
+      addBox(car, 0.55, 0.26, 0.95, 0, 0.2, 0, flatMat(carColors[ci]));
+      addBox(car, 0.44, 0.18, 0.5, 0, 0.4, 0, flatMat("#e2e8f0"));
+      car.position.set(-1.8 + (ci % 2 === 0 ? -0.32 : 0.32), 0.06, -6 + ci * 5);
+      era2.add(car);
+      this.vehicles.push({ mesh: car, dir: ci % 2 === 0 ? 1 : -1, speed: 2.2 + ci * 0.45 });
+    }
 
     // Era 3: Modern Eco-City
     const era3 = new THREE.Group();
@@ -639,6 +693,18 @@ export class WaterPowerWorld {
       this.waterMat.emissiveIntensity = 0;
       this.sunLight.color.set("#f0f9ff");
       this.sunLight.intensity = 1.95;
+
+      // Transform station materials into Frost & Geothermal kit
+      this.stationMats.wood.color.set("#bae6fd");
+      this.stationMats.metal.color.set("#475569");
+      this.stationMats.concrete.color.set("#f1f5f9");
+      this.stationMats.accent.color.set("#0284c7");
+      this.stationMats.blade.color.set("#e0f2fe");
+      this.stationMats.copper.color.set("#f97316");
+      this.stationMats.glow.color.set("#7dd3fc");
+      this.stationMats.glow.emissive.set("#38bdf8");
+      this.stationMats.coreGlow.color.set("#e0f2fe");
+      this.stationMats.coreGlow.emissive.set("#0ea5e9");
     } else if (zoneId === "cyber") {
       this.scene.background.set("#070d1f");
       this.scene.fog.color.set("#0b132b");
@@ -653,6 +719,18 @@ export class WaterPowerWorld {
       this.waterMat.emissiveIntensity = 0.55;
       this.sunLight.color.set("#a5f3fc");
       this.sunLight.intensity = 1.35;
+
+      // Transform station materials into Obsidian & Neon Cyber kit
+      this.stationMats.wood.color.set("#1e293b");
+      this.stationMats.metal.color.set("#0f172a");
+      this.stationMats.concrete.color.set("#312e81");
+      this.stationMats.accent.color.set("#ec4899");
+      this.stationMats.blade.color.set("#22d3ee");
+      this.stationMats.copper.color.set("#f472b6");
+      this.stationMats.glow.color.set("#f472b6");
+      this.stationMats.glow.emissive.set("#ec4899");
+      this.stationMats.coreGlow.color.set("#67e8f9");
+      this.stationMats.coreGlow.emissive.set("#22d3ee");
     } else {
       this.scene.background.set("#73c2fb");
       this.scene.fog.color.set("#8dd1fc");
@@ -667,6 +745,18 @@ export class WaterPowerWorld {
       this.waterMat.emissiveIntensity = 0;
       this.sunLight.color.set("#fff6df");
       this.sunLight.intensity = 1.85;
+
+      // Classic Valley oak & brass hydro kit
+      this.stationMats.wood.color.set("#8b4513");
+      this.stationMats.metal.color.set("#475569");
+      this.stationMats.concrete.color.set("#cbd5e1");
+      this.stationMats.accent.color.set("#0284c7");
+      this.stationMats.blade.color.set("#38bdf8");
+      this.stationMats.copper.color.set("#d97706");
+      this.stationMats.glow.color.set("#38bdf8");
+      this.stationMats.glow.emissive.set("#0ea5e9");
+      this.stationMats.coreGlow.color.set("#67e8f9");
+      this.stationMats.coreGlow.emissive.set("#22d3ee");
     }
   }
 
@@ -990,6 +1080,13 @@ export class WaterPowerWorld {
     if (state.activeZoneId === "cyber") {
       for (const ring of this.cyberRings) {
         ring.rotation.z += dt * 0.9;
+      }
+    }
+    if (this.activeEra >= 2) {
+      for (const v of this.vehicles) {
+        v.mesh.position.z += v.dir * v.speed * dt;
+        if (v.mesh.position.z > 8.2) v.mesh.position.z = -8.2;
+        if (v.mesh.position.z < -8.2) v.mesh.position.z = 8.2;
       }
     }
 

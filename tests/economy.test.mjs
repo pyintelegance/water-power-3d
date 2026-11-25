@@ -24,7 +24,7 @@ test("initial state starts in Green Valley with valley stations and upgrades", (
   const s = createInitialState(0);
   assert.equal(s.activeZoneId, "valley");
   assert.equal(s.stations.s0.unlocked, true);
-  assert.equal(getZoneStations("valley")[0].name, "Деревянное колесо");
+  assert.equal(getZoneStations("valley")[0].name, "Водяное колесо");
   assert.equal(getCurrentGoalProgress(s).goal.targetWatts, 120);
 });
 
