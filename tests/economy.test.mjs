@@ -8,6 +8,7 @@ import {
   buyStationAction,
   buyUpgradeAction,
   canAdvanceZone,
+  canTriggerArchitect,
   checkAchievements,
   checkAndClaimGoals,
   claimQuestReward,
@@ -15,13 +16,16 @@ import {
   computePendingEngineers,
   createInitialState,
   getActiveQuest,
+  getBoosterCashCost,
   getCurrentGoalProgress,
+  getMaxAffordableStationLevels,
   getOnboardingUnlocks,
   getTotals,
   getZoneStations,
   getZoneUpgrades,
   resetAllProgress,
   tickEconomy,
+  triggerArchitectAscension,
   triggerPrestige
 } from "../src/economy.js";
 import { setLang, t, tStationField, tZoneField } from "../src/i18n.js";
@@ -49,14 +53,17 @@ test("reaching 1.8 MW enables transition to Glacier and resets stations/cash cle
   assert.ok(ready && ready.id === "glacier");
 
   const prevCrystals = s.crystals;
+  const pendingEng = computePendingEngineers(s);
+  assert.ok(pendingEng > 0);
   const next = advanceToNextZone(s);
   assert.equal(next.id, "glacier");
   assert.equal(s.activeZoneId, "glacier");
+  assert.equal(s.engineers, pendingEng);
   assert.ok(s.completedZones.includes("valley"));
-  // Cash, stations, and local upgrades reset on transition
+  // Cash, stations, and local upgrades reset on transition (engineers auto-collected + start bonus)
   assert.equal(s.stations.s1.unlocked, false);
   assert.equal(s.upgrades.u0, 0);
-  assert.equal(s.cash, 100 * next.incomeMult);
+  assert.equal(s.cash, 100 * next.incomeMult + s.engineers * 120);
   // Crystals preserved + bonus awarded
   assert.equal(s.crystals, prevCrystals + next.rewardCrystals);
   // New location has brand-new stations & upgrades
@@ -80,7 +87,7 @@ test("onboarding unlocks gradually and resetAllProgress restores fresh state", (
   assert.equal(u.prestige, true);
 
   resetAllProgress(s);
-  assert.equal(s.cash, 0);
+  assert.equal(s.cash, 20);
   assert.equal(s.activeZoneId, "valley");
   assert.equal(s.stations.s1.unlocked, false);
 });
@@ -135,4 +142,28 @@ test("i18n switches cleanly between EN and RU across UI and station catalog", ()
   setLang("ru");
   assert.equal(t("tabStations"), "Станции");
   assert.equal(tStationField("valley", st0, "name"), "Водяное колесо");
+});
+
+test("anti-exploit: booster cash cost invariant & Architect ascension resets world", () => {
+  const s = createInitialState(0);
+  s.crystals = 20;
+  const turboDef = { id: "turbo_3x" };
+  const costBefore = getBoosterCashCost(s, turboDef);
+  buyBoosterAction(s, "turbo_3x", "crystals");
+  s.overdrive = 1;
+  assert.equal(getBoosterCashCost(s, turboDef), costBefore);
+
+  // Max affordable bulk never exceeds cash
+  s.cash = 1000;
+  const n = getMaxAffordableStationLevels(getZoneStations("valley")[0], 0, s.cash);
+  assert.ok(n > 0);
+
+  // Architect Ascension unlocks at 2.0 GW in Cyber
+  s.activeZoneId = "cyber";
+  s.stations.s5 = { unlocked: true, level: 25, cycleProgress: 0, totalMined: 0 };
+  assert.equal(canTriggerArchitect(s), true);
+  assert.equal(triggerArchitectAscension(s), 1);
+  assert.equal(s.architects, 1);
+  assert.equal(s.ascension, 1);
+  assert.equal(s.activeZoneId, "valley");
 });

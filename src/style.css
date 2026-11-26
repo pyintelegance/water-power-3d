@@ -30,7 +30,7 @@ body,
   overflow: hidden;
   background: var(--bg-deep);
   color: var(--text-main);
-  font-family: "Inter", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  font-family: "Segoe UI", "Roboto", "Noto Sans", system-ui, -apple-system, sans-serif;
   font-variant-numeric: tabular-nums;
 }
 
@@ -226,20 +226,31 @@ body,
 
 .onboarding-hint {
   position: absolute;
-  top: 52%;
+  bottom: calc(30vh + 72px);
   left: 50%;
-  transform: translate(-50%, -50%);
-  background: rgba(15, 23, 42, 0.9);
-  border: 1px solid rgba(103, 232, 249, 0.65);
-  color: #e0f2fe;
+  transform: translateX(-50%);
+  background: rgba(9, 24, 40, 0.94);
+  border: 1.5px solid rgba(56, 189, 248, 0.85);
+  color: #f8fafc;
   font-size: 12px;
   font-weight: 800;
-  padding: 8px 14px;
-  border-radius: 12px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  white-space: nowrap;
   pointer-events: none;
   z-index: 19;
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.55);
   animation: pulseBtn 1.6s infinite;
+}
+
+.onboarding-hint::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  transform: translateX(-50%);
+  border: 7px solid transparent;
+  border-top-color: rgba(56, 189, 248, 0.85);
 }
 
 .onboarding-hint.hidden { display: none; }
@@ -563,6 +574,14 @@ body.goal-collapsed .mid-controls {
   white-space: nowrap;
 }
 
+.pan-toggle-btn {
+  width: 34px;
+  padding: 5px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
 .cam-btn { flex: 1; }
 
 .cam-btn.active {
@@ -769,7 +788,7 @@ body.goal-collapsed .mid-controls {
 }
 
 .lvl-badge {
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 800;
   padding: 1px 6px;
   border-radius: 6px;
@@ -777,14 +796,19 @@ body.goal-collapsed .mid-controls {
   color: var(--cyan-bright);
 }
 
+.lvl-badge.ready {
+  background: rgba(16, 185, 129, 0.25);
+  color: #6ee7b7;
+}
+
 .card-meta {
-  font-size: 10.5px;
-  color: var(--text-muted);
+  font-size: 11px;
+  color: #cbd5e1;
   margin-top: 2px;
 }
 
 .card-delta {
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--green);
   margin-top: 2px;
@@ -858,9 +882,9 @@ body.goal-collapsed .mid-controls {
 }
 
 .buy-btn.cannot-afford {
-  background: rgba(148, 163, 184, 0.16);
-  border-bottom-color: rgba(15, 23, 42, 0.45);
-  color: var(--text-muted);
+  background: rgba(148, 163, 184, 0.22);
+  border-bottom-color: rgba(15, 23, 42, 0.55);
+  color: #fca5a5;
   cursor: not-allowed;
 }
 
@@ -1130,14 +1154,18 @@ body.goal-collapsed .mid-controls {
 }
 
 @media (min-width: 1024px) {
-  .top-hud { left: 14px; right: 416px; max-width: 680px; }
-  .goal-banner { left: 14px; right: 416px; margin: 0; max-width: 680px; }
+  .top-hud { left: 14px; right: 416px; max-width: 560px; }
+  .goal-banner { left: 14px; right: 416px; margin: 0; max-width: 560px; }
   .mid-controls {
-    margin: calc(max(10px, var(--safe-top)) + 152px) 416px 0 14px;
+    margin: calc(max(10px, var(--safe-top)) + 158px) 416px 0 14px;
     width: auto;
-    max-width: 680px;
+    max-width: 560px;
   }
-  body.goal-collapsed .mid-controls { margin-top: calc(max(10px, var(--safe-top)) + 92px); }
+  body.goal-collapsed .mid-controls { margin-top: calc(max(10px, var(--safe-top)) + 88px); }
+  .onboarding-hint {
+    bottom: 58px;
+    left: calc((100% - 404px) * 0.48);
+  }
 
   .drawer {
     top: 12px;

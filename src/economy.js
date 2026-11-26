@@ -50,35 +50,35 @@ export const ZONES = [
     icon: "glacier",
     incomeMult: 5,
     nextZoneId: "cyber",
-    nextZoneTargetWatts: 18000000,
+    nextZoneTargetWatts: 60000000,
     rewardCrystals: 18,
     desc: "Ледниковый каньон: крио-турбины, термальные ГЭС и северный город",
     eras: [
       { minWatts: 0, name: "Полярный лагерь" },
-      { minWatts: 500, name: "Зимняя деревня" },
-      { minWatts: 20000, name: "Горная база" },
-      { minWatts: 600000, name: "Термальный полис" },
-      { minWatts: 18000000, name: "Аврора-Мегаполис" }
+      { minWatts: 1000, name: "Зимняя деревня" },
+      { minWatts: 40000, name: "Горная база" },
+      { minWatts: 1200000, name: "Термальный полис" },
+      { minWatts: 60000000, name: "Аврора-Мегаполис" }
     ],
     stations: [
-      { id: "s0", name: "Ледовое колесо", icon: "s0", desc: "Морозостойкий ледовый ротор", unlockCost: 0, baseCost: 18, costGrowth: 1.17, baseIncome: 1.8, baseWatts: 35, cycleSec: 1.9 },
-      { id: "s1", name: "Крио-турбина", icon: "s1", desc: "Спаренный вал с термо-подогревом", unlockCost: 220, baseCost: 270, costGrowth: 1.18, baseIncome: 16, baseWatts: 260, cycleSec: 2.3 },
-      { id: "s2", name: "Горный водомёт", icon: "s2", desc: "Ледниковая струя под давлением", unlockCost: 3400, baseCost: 4200, costGrowth: 1.19, baseIncome: 145, baseWatts: 2200, cycleSec: 2.6 },
-      { id: "s3", name: "Ледниковая дамба", icon: "s3", desc: "Армированная полярная плотина", unlockCost: 58000, baseCost: 70000, costGrowth: 1.2, baseIncome: 1600, baseWatts: 24000, cycleSec: 3.0 },
-      { id: "s4", name: "Гео-термо ГЭС", icon: "s4", desc: "Энергия пара и горного каскада", unlockCost: 1100000, baseCost: 1350000, costGrowth: 1.21, baseIncome: 21000, baseWatts: 360000, cycleSec: 3.4 },
-      { id: "s5", name: "Аврора-реактор", icon: "s5", desc: "Кристалл северного сияния", unlockCost: 25000000, baseCost: 30000000, costGrowth: 1.22, baseIncome: 340000, baseWatts: 7500000, cycleSec: 3.8 }
+      { id: "s0", name: "Ледовое колесо", icon: "s0", desc: "Морозостойкий ледовый ротор", unlockCost: 0, baseCost: 900, costGrowth: 1.19, baseIncome: 1.8, baseWatts: 35, cycleSec: 2.0 },
+      { id: "s1", name: "Крио-турбина", icon: "s1", desc: "Спаренный вал с термо-подогревом", unlockCost: 14000, baseCost: 17000, costGrowth: 1.2, baseIncome: 14, baseWatts: 260, cycleSec: 2.4 },
+      { id: "s2", name: "Горный водомёт", icon: "s2", desc: "Ледниковая струя под давлением", unlockCost: 240000, baseCost: 290000, costGrowth: 1.21, baseIncome: 125, baseWatts: 2200, cycleSec: 2.7 },
+      { id: "s3", name: "Ледниковая дамба", icon: "s3", desc: "Армированная полярная плотина", unlockCost: 4500000, baseCost: 5500000, costGrowth: 1.22, baseIncome: 1400, baseWatts: 24000, cycleSec: 3.1 },
+      { id: "s4", name: "Гео-термо ГЭС", icon: "s4", desc: "Энергия пара и горного каскада", unlockCost: 95000000, baseCost: 115000000, costGrowth: 1.23, baseIncome: 18500, baseWatts: 360000, cycleSec: 3.5 },
+      { id: "s5", name: "Аврора-реактор", icon: "s5", desc: "Кристалл северного сияния", unlockCost: 2400000000, baseCost: 3000000000, costGrowth: 1.24, baseIncome: 310000, baseWatts: 7500000, cycleSec: 3.9 }
     ],
     upgrades: [
-      { id: "u0", name: "Антилёд-подогрев", icon: "flow", targetLabel: "Разгоняет поток сквозь льды", baseCost: 75, costGrowth: 1.65, maxLevel: 40, kind: "flow" },
-      { id: "u1", name: "Ледокол-шлюз", icon: "dam", targetLabel: "Усиливает мощность крио-станций", baseCost: 320, costGrowth: 1.75, maxLevel: 35, kind: "dam" },
-      { id: "u2", name: "Тепловая сеть", icon: "tap", targetLabel: "Усиливает клик и тепловой импульс", baseCost: 150, costGrowth: 1.6, maxLevel: 35, kind: "tap" },
-      { id: "u3", name: "Полярный экспорт", icon: "tariff", targetLabel: "Повышает доход с мегаватт в горах", baseCost: 700, costGrowth: 1.8, maxLevel: 30, kind: "tariff" }
+      { id: "u0", name: "Антилёд-подогрев", icon: "flow", targetLabel: "Разгоняет поток сквозь льды", baseCost: 2800, costGrowth: 1.72, maxLevel: 40, kind: "flow" },
+      { id: "u1", name: "Ледокол-шлюз", icon: "dam", targetLabel: "Усиливает мощность крио-станций", baseCost: 14000, costGrowth: 1.8, maxLevel: 35, kind: "dam" },
+      { id: "u2", name: "Тепловая сеть", icon: "tap", targetLabel: "Усиливает клик и тепловой импульс", baseCost: 6000, costGrowth: 1.68, maxLevel: 35, kind: "tap" },
+      { id: "u3", name: "Полярный экспорт", icon: "tariff", targetLabel: "Повышает доход с мегаватт в горах", baseCost: 32000, costGrowth: 1.85, maxLevel: 30, kind: "tariff" }
     ],
     goals: [
-      { id: "g_1", title: "Согреть деревню", subtitle: "Выйдите на 500 W", targetWatts: 500, rewardCash: 160, rewardCrystals: 4 },
-      { id: "g_2", title: "Открыть горную базу", subtitle: "Достигните 20 kW", targetWatts: 20000, rewardCash: 5500, rewardCrystals: 6 },
-      { id: "g_3", title: "Термальный полис", subtitle: "Достигните 600 kW", targetWatts: 600000, rewardCash: 150000, rewardCrystals: 10 },
-      { id: "g_4", title: "Открыть Неоновый каньон", subtitle: "Достигните 18 MW для финала", targetWatts: 18000000, rewardCash: 4000000, rewardCrystals: 15 }
+      { id: "g_1", title: "Согреть деревню", subtitle: "Выйдите на 1.0 kW", targetWatts: 1000, rewardCash: 2500, rewardCrystals: 4 },
+      { id: "g_2", title: "Открыть горную базу", subtitle: "Достигните 40 kW", targetWatts: 40000, rewardCash: 85000, rewardCrystals: 6 },
+      { id: "g_3", title: "Термальный полис", subtitle: "Достигните 1.2 MW", targetWatts: 1200000, rewardCash: 2500000, rewardCrystals: 10 },
+      { id: "g_4", title: "Открыть Неоновый каньон", subtitle: "Достигните 60 MW для финала", targetWatts: 60000000, rewardCash: 90000000, rewardCrystals: 15 }
     ]
   },
   {
@@ -94,30 +94,30 @@ export const ZONES = [
     desc: "Ночной кибер-каньон: плазма-роторы, магнитные шлюзы и мегасити",
     eras: [
       { minWatts: 0, name: "Неоновый аванпост" },
-      { minWatts: 5000, name: "Кибер-квартал" },
-      { minWatts: 250000, name: "Сектор Омега" },
-      { minWatts: 10000000, name: "Хроно-Сити" },
-      { minWatts: 250000000, name: "Орбитальный Мегаполис" }
+      { minWatts: 10000, name: "Кибер-квартал" },
+      { minWatts: 600000, name: "Сектор Омега" },
+      { minWatts: 30000000, name: "Хроно-Сити" },
+      { minWatts: 2000000000, name: "Орбитальный Мегаполис" }
     ],
     stations: [
-      { id: "s0", name: "Плазма-ротор", icon: "s0", desc: "Неоновая турбина высокого тока", unlockCost: 0, baseCost: 24, costGrowth: 1.17, baseIncome: 3.5, baseWatts: 150, cycleSec: 1.8 },
-      { id: "s1", name: "Гипер-турбина", icon: "s1", desc: "Двойное лазерное ускорение", unlockCost: 340, baseCost: 420, costGrowth: 1.18, baseIncome: 32, baseWatts: 1200, cycleSec: 2.2 },
-      { id: "s2", name: "Магнитный канал", icon: "s2", desc: "Магнитный разгон плазменной воды", unlockCost: 5200, baseCost: 6400, costGrowth: 1.19, baseIncome: 290, baseWatts: 11000, cycleSec: 2.5 },
-      { id: "s3", name: "Кибер-плотина", icon: "s3", desc: "Голографическая дамба будущего", unlockCost: 92000, baseCost: 112000, costGrowth: 1.2, baseIncome: 3300, baseWatts: 140000, cycleSec: 2.9 },
-      { id: "s4", name: "Орбитальный шлюз", icon: "s4", desc: "Гравитационный гидро-каскад", unlockCost: 1700000, baseCost: 2100000, costGrowth: 1.21, baseIncome: 46000, baseWatts: 2200000, cycleSec: 3.3 },
-      { id: "s5", name: "Сингулярность ГЭС", icon: "s5", desc: "Главный реактор мегасити", unlockCost: 38000000, baseCost: 46000000, costGrowth: 1.22, baseIncome: 780000, baseWatts: 55000000, cycleSec: 3.7 }
+      { id: "s0", name: "Плазма-ротор", icon: "s0", desc: "Неоновая турбина высокого тока", unlockCost: 0, baseCost: 48000, costGrowth: 1.21, baseIncome: 3.6, baseWatts: 150, cycleSec: 1.9 },
+      { id: "s1", name: "Гипер-турбина", icon: "s1", desc: "Двойное лазерное ускорение", unlockCost: 750000, baseCost: 920000, costGrowth: 1.22, baseIncome: 30, baseWatts: 1200, cycleSec: 2.3 },
+      { id: "s2", name: "Магнитный канал", icon: "s2", desc: "Магнитный разгон плазменной воды", unlockCost: 14000000, baseCost: 17000000, costGrowth: 1.23, baseIncome: 270, baseWatts: 11000, cycleSec: 2.6 },
+      { id: "s3", name: "Кибер-плотина", icon: "s3", desc: "Голографическая дамба будущего", unlockCost: 280000000, baseCost: 340000000, costGrowth: 1.24, baseIncome: 3000, baseWatts: 140000, cycleSec: 3.0 },
+      { id: "s4", name: "Орбитальный шлюз", icon: "s4", desc: "Гравитационный гидро-каскад", unlockCost: 6200000000, baseCost: 7600000000, costGrowth: 1.25, baseIncome: 42000, baseWatts: 2200000, cycleSec: 3.4 },
+      { id: "s5", name: "Сингулярность ГЭС", icon: "s5", desc: "Главный реактор мегасити", unlockCost: 180000000000, baseCost: 220000000000, costGrowth: 1.26, baseIncome: 720000, baseWatts: 55000000, cycleSec: 3.8 }
     ],
     upgrades: [
-      { id: "u0", name: "Плазменный поток", icon: "flow", targetLabel: "Разгоняет поток в неон-канале", baseCost: 110, costGrowth: 1.65, maxLevel: 40, kind: "flow" },
-      { id: "u1", name: "Нано-генерация", icon: "dam", targetLabel: "Умножает добычу кибер-станций", baseCost: 440, costGrowth: 1.75, maxLevel: 35, kind: "dam" },
-      { id: "u2", name: "Нейро-клик", icon: "tap", targetLabel: "Максимизирует импульс клика", baseCost: 220, costGrowth: 1.6, maxLevel: 35, kind: "tap" },
-      { id: "u3", name: "Мега-контракт", icon: "tariff", targetLabel: "Премиальный тариф мегасити", baseCost: 960, costGrowth: 1.8, maxLevel: 30, kind: "tariff" }
+      { id: "u0", name: "Плазменный поток", icon: "flow", targetLabel: "Разгоняет поток в неон-канале", baseCost: 140000, costGrowth: 1.75, maxLevel: 40, kind: "flow" },
+      { id: "u1", name: "Нано-генерация", icon: "dam", targetLabel: "Умножает добычу кибер-станций", baseCost: 700000, costGrowth: 1.85, maxLevel: 35, kind: "dam" },
+      { id: "u2", name: "Нейро-клик", icon: "tap", targetLabel: "Максимизирует импульс клика", baseCost: 300000, costGrowth: 1.7, maxLevel: 35, kind: "tap" },
+      { id: "u3", name: "Мега-контракт", icon: "tariff", targetLabel: "Премиальный тариф мегасити", baseCost: 1600000, costGrowth: 1.88, maxLevel: 30, kind: "tariff" }
     ],
     goals: [
-      { id: "c_1", title: "Зажечь Кибер-квартал", subtitle: "Выйдите на 5.0 kW", targetWatts: 5000, rewardCash: 800, rewardCrystals: 5 },
-      { id: "c_2", title: "Питание Сектора Омега", subtitle: "Достигните 250 kW", targetWatts: 250000, rewardCash: 45000, rewardCrystals: 8 },
-      { id: "c_3", title: "Запустить Хроно-Сити", subtitle: "Достигните 10 MW", targetWatts: 10000000, rewardCash: 2200000, rewardCrystals: 15 },
-      { id: "c_4", title: "Орбитальный Мегаполис", subtitle: "Финал: достигните 250 MW", targetWatts: 250000000, rewardCash: 100000000, rewardCrystals: 40 }
+      { id: "c_1", title: "Зажечь Кибер-квартал", subtitle: "Выйдите на 10 kW", targetWatts: 10000, rewardCash: 120000, rewardCrystals: 5 },
+      { id: "c_2", title: "Питание Сектора Омега", subtitle: "Достигните 600 kW", targetWatts: 600000, rewardCash: 5500000, rewardCrystals: 8 },
+      { id: "c_3", title: "Запустить Хроно-Сити", subtitle: "Достигните 30 MW", targetWatts: 30000000, rewardCash: 220000000, rewardCrystals: 15 },
+      { id: "c_4", title: "Орбитальный Мегаполис", subtitle: "Финал: достигните 2.0 GW", targetWatts: 2000000000, rewardCash: 12000000000, rewardCrystals: 40 }
     ]
   }
 ];
@@ -188,20 +188,25 @@ export function createInitialState(engineers = 0, preserved = null) {
     upgrades[up.id] = 0;
   }
 
-  const startBonus = (engineers > 0 ? engineers * 120 : 0) + (preserved?.extraStartCash || 0);
+  const safeEngineers = Math.max(0, Number(engineers) || 0);
+  const startBonus =
+    (safeEngineers > 0 ? safeEngineers * 120 : 0) +
+    (preserved?.extraStartCash ?? 20);
   return {
     cash: startBonus,
     runCash: startBonus,
     lifetimeCash: preserved?.lifetimeCash || 0,
     crystals: preserved?.crystals ?? 5,
-    engineers,
+    engineers: safeEngineers,
+    architects: Math.max(0, Number(preserved?.architects) || 0),
+    ascension: Math.max(0, Number(preserved?.ascension) || 0),
     activeZoneId: zoneId,
     unlockedZones: preserved?.unlockedZones || ["valley"],
     completedZones: preserved?.completedZones || [],
     stations,
     upgrades,
     shopPerks: preserved?.shopPerks || { gold_blades: 0, crystal_battery: 0, offline_amp: 0 },
-    boosters: { turbo_3x: 0, rain_2x: 0, auto_tap: 0 },
+    boosters: preserved?.boosters || { turbo_3x: 0, rain_2x: 0, auto_tap: 0 },
     claimedGoals: preserved?.claimedGoals || [],
     claimedAchievements: preserved?.claimedAchievements || [],
     quest: preserved?.quest || { index: 0, progress: 0 },
@@ -218,11 +223,14 @@ export function getMilestoneMultiplier(level) {
   if (level >= 25) mult *= 2;
   if (level >= 50) mult *= 2;
   if (level >= 100) mult *= 3;
+  if (level >= 150) mult *= 2;
+  if (level >= 200) mult *= 2;
+  if (level >= 300) mult *= 3;
   return mult;
 }
 
 export function getNextMilestoneLevel(level) {
-  for (const m of [10, 25, 50, 100]) {
+  for (const m of [10, 25, 50, 100, 150, 200, 300]) {
     if (level < m) return m;
   }
   return null;
@@ -243,10 +251,11 @@ export function getGlobalMultiplier(state) {
   const flowMult = getFlowSpeedMultiplier(state);
   const damMult = 1 + (state.upgrades.u1 || 0) * 0.22;
   const tariffMult = 1 + (state.upgrades.u3 || 0) * 0.25;
-  const engineerMult = 1 + (state.engineers || 0) * 0.5;
+  const engineerMult = 1 + (Number(state.engineers) || 0) * 0.5;
   const perkMult = 1 + (state.shopPerks?.gold_blades || 0) * 0.5;
+  const architectMult = Math.pow(2, state.architects || 0);
   const zoneMult = getActiveZone(state).incomeMult;
-  return flowMult * damMult * tariffMult * engineerMult * perkMult * zoneMult;
+  return flowMult * damMult * tariffMult * engineerMult * perkMult * architectMult * zoneMult;
 }
 
 export function getOverdriveMultiplier(state) {
@@ -258,14 +267,15 @@ export function getStationOutput(state, def, levelOverride = null) {
   const level = levelOverride !== null ? levelOverride : st?.level || 0;
   const unlocked = levelOverride !== null ? level > 0 : Boolean(st?.unlocked && level > 0);
   if (!unlocked || level <= 0) {
-    return { incomePerSec: 0, watts: 0, cycleSec: def.cycleSec, payoutPerCycle: 0 };
+    return { incomePerSec: 0, unboostedIncomePerSec: 0, watts: 0, cycleSec: def.cycleSec, payoutPerCycle: 0 };
   }
   const milestone = getMilestoneMultiplier(level);
   const globalMult = getGlobalMultiplier(state);
   const boosterMult = getBoosterIncomeMultiplier(state);
-  const batteryMult = 1 + (state.shopPerks?.crystal_battery || 0) * 0.25;
+  const batteryMult = (1 + (state.shopPerks?.crystal_battery || 0) * 0.25) * Math.pow(2, state.architects || 0);
 
-  const incomePerSec = def.baseIncome * level * milestone * globalMult * boosterMult;
+  const unboostedIncomePerSec = def.baseIncome * level * milestone * globalMult;
+  const incomePerSec = unboostedIncomePerSec * boosterMult;
   const watts =
     def.baseWatts * level * milestone * (1 + (state.upgrades.u0 || 0) * 0.16) * batteryMult;
 
@@ -273,27 +283,29 @@ export function getStationOutput(state, def, levelOverride = null) {
   const flowFactor = 1 + (state.upgrades.u0 || 0) * 0.08;
   const speedBoost = flowFactor * getOverdriveMultiplier(state) * rainSpeed;
   const effectiveCycleSec = Math.max(0.4, def.cycleSec / speedBoost);
-  // Payout scales inversely with flowFactor * rainSpeed so actual $/sec equals incomePerSec * overdriveMult without double-dipping
   const payoutPerCycle = (incomePerSec * def.cycleSec) / (flowFactor * rainSpeed);
-  return { incomePerSec, watts, cycleSec: effectiveCycleSec, payoutPerCycle };
+  return { incomePerSec, unboostedIncomePerSec, watts, cycleSec: effectiveCycleSec, payoutPerCycle };
 }
 
 export function getTotals(state) {
   const zoneStations = getZoneStations(state.activeZoneId);
   let baseIncomePerSec = 0;
+  let unboostedIncomePerSec = 0;
   let totalWatts = 0;
   for (const def of zoneStations) {
     const out = getStationOutput(state, def);
     baseIncomePerSec += out.incomePerSec;
+    unboostedIncomePerSec += out.unboostedIncomePerSec;
     totalWatts += out.watts;
   }
   const overdriveMult = getOverdriveMultiplier(state);
   const effectiveIncomePerSec = baseIncomePerSec * overdriveMult;
+  // Taps scale gently on unboosted idle output so taps help early without overshadowing high-tier dams or exploiting boosters
   const tapBonus = Math.max(
     1,
-    (1.0 + baseIncomePerSec * 0.12) * (1 + (state.upgrades.u2 || 0) * 0.35)
+    (1.0 + unboostedIncomePerSec * 0.08) * (1 + Math.min(2.2, (state.upgrades.u2 || 0) * 0.12))
   );
-  return { baseIncomePerSec, effectiveIncomePerSec, totalWatts, overdriveMult, tapBonus };
+  return { baseIncomePerSec, unboostedIncomePerSec, effectiveIncomePerSec, totalWatts, overdriveMult, tapBonus };
 }
 
 export function getCityEraIndex(state, totalWatts) {
@@ -318,16 +330,24 @@ export function getPlayerRank(state) {
   return "Стажёр на ручье";
 }
 
+function effectiveGoalTarget(state, goal) {
+  if (state.activeZoneId === "cyber" && (state.ascension || 0) > 0) {
+    return goal.targetWatts * Math.pow(10, state.ascension);
+  }
+  return goal.targetWatts;
+}
+
 export function getCurrentGoalProgress(state) {
   const { totalWatts } = getTotals(state);
   const goals = getZoneGoals(state.activeZoneId);
   const claimed = new Set(state.claimedGoals || []);
   for (let i = 0; i < goals.length; i += 1) {
-    const goal = goals[i];
-    if (!claimed.has(goal.id)) {
-      const pct = Math.min(100, (totalWatts / goal.targetWatts) * 100);
+    const rawGoal = goals[i];
+    if (!claimed.has(rawGoal.id)) {
+      const targetWatts = effectiveGoalTarget(state, rawGoal);
+      const pct = Math.min(100, (totalWatts / targetWatts) * 100);
       return {
-        goal,
+        goal: { ...rawGoal, targetWatts },
         index: i,
         totalGoals: goals.length,
         currentWatts: totalWatts,
@@ -337,8 +357,9 @@ export function getCurrentGoalProgress(state) {
     }
   }
   const last = goals[goals.length - 1];
+  const lastTarget = effectiveGoalTarget(state, last);
   return {
-    goal: last,
+    goal: { ...last, targetWatts: lastTarget },
     index: goals.length - 1,
     totalGoals: goals.length,
     currentWatts: totalWatts,
@@ -353,13 +374,14 @@ export function checkAndClaimGoals(state) {
   if (!Array.isArray(state.claimedGoals)) state.claimedGoals = [];
   const newlyClaimed = [];
   for (const goal of goals) {
-    if (!state.claimedGoals.includes(goal.id) && totalWatts >= goal.targetWatts) {
+    const targetWatts = effectiveGoalTarget(state, goal);
+    if (!state.claimedGoals.includes(goal.id) && totalWatts >= targetWatts) {
       state.claimedGoals.push(goal.id);
       state.cash += goal.rewardCash;
       state.runCash += goal.rewardCash;
       state.lifetimeCash += goal.rewardCash;
       state.crystals = (state.crystals || 0) + (goal.rewardCrystals || 0);
-      newlyClaimed.push(goal);
+      newlyClaimed.push({ ...goal, targetWatts });
     }
   }
   return newlyClaimed;
@@ -378,23 +400,64 @@ export function advanceToNextZone(state) {
   const nextZone = canAdvanceZone(state);
   if (!nextZone) return null;
 
+  const pendingEng = computePendingEngineers(state);
+  const totalEng = (Number(state.engineers) || 0) + pendingEng;
   const unlocked = Array.from(new Set([...(state.unlockedZones || ["valley"]), nextZone.id]));
   const completed = Array.from(new Set([...(state.completedZones || []), curZone.id]));
 
-  const nextState = createInitialState(state.engineers || 0, {
+  const nextState = createInitialState(totalEng, {
     activeZoneId: nextZone.id,
     unlockedZones: unlocked,
     completedZones: completed,
     lifetimeCash: state.lifetimeCash,
     crystals: (state.crystals || 0) + (nextZone.rewardCrystals || 0),
+    architects: state.architects || 0,
+    ascension: state.ascension || 0,
     shopPerks: state.shopPerks,
+    boosters: { ...(state.boosters || { turbo_3x: 0, rain_2x: 0, auto_tap: 0 }) },
+    quest: state.quest,
     claimedGoals: state.claimedGoals,
     claimedAchievements: state.claimedAchievements,
     profile: state.profile,
     extraStartCash: 100 * nextZone.incomeMult
   });
   Object.assign(state, nextState);
-  return nextZone;
+  return { ...nextZone, gainedEngineers: pendingEng };
+}
+
+export function getArchitectTargetWatts(state) {
+  const cyberGoal = 2000000000;
+  return cyberGoal * Math.pow(10, state.ascension || 0);
+}
+
+export function canTriggerArchitect(state) {
+  if (state.activeZoneId !== "cyber") return false;
+  return getTotals(state).totalWatts >= getArchitectTargetWatts(state);
+}
+
+export function triggerArchitectAscension(state) {
+  if (!canTriggerArchitect(state)) return 0;
+  const gained = 1;
+  const nextArchitects = (state.architects || 0) + gained;
+  const nextAscension = (state.ascension || 0) + 1;
+  const next = createInitialState(0, {
+    activeZoneId: "valley",
+    unlockedZones: ["valley"],
+    completedZones: [],
+    lifetimeCash: state.lifetimeCash,
+    crystals: (state.crystals || 0) + 25,
+    architects: nextArchitects,
+    ascension: nextAscension,
+    shopPerks: state.shopPerks,
+    boosters: { ...(state.boosters || { turbo_3x: 0, rain_2x: 0, auto_tap: 0 }) },
+    quest: state.quest,
+    claimedGoals: [],
+    claimedAchievements: state.claimedAchievements,
+    profile: state.profile,
+    extraStartCash: 20
+  });
+  Object.assign(state, next);
+  return gained;
 }
 
 export function checkAchievements(state) {
@@ -422,8 +485,11 @@ export function getMaxAffordableStationLevels(def, currentLevel, cash) {
   const first = def.baseCost * Math.pow(r, currentLevel);
   if (cash < first) return 0;
   const ratio = 1 + (cash * (r - 1)) / first;
-  const n = Math.floor(Math.log(ratio) / Math.log(r));
-  return Math.max(0, Math.min(200, n));
+  let n = Math.max(0, Math.min(200, Math.floor(Math.log(ratio) / Math.log(r))));
+  while (n > 0 && getBulkStationCost(def, currentLevel, n) > cash) {
+    n -= 1;
+  }
+  return n;
 }
 
 export function getStationUpgradePreview(state, def, buyCount) {
@@ -462,7 +528,9 @@ export function getUpgradeEffectText(state, def) {
   }
   if (def.kind === "tap") {
     const curTap = totals.tapBonus;
-    const nxtTap = curTap * ((1 + (lvl + 1) * 0.35) / (1 + lvl * 0.35));
+    const curU2 = 1 + Math.min(2.2, lvl * 0.12);
+    const nxtU2 = 1 + Math.min(2.2, (lvl + 1) * 0.12);
+    const nxtTap = curTap * (nxtU2 / curU2);
     return `${en ? "River Tap" : "Клик по воде"}: ${formatCompact(curTap, "$")} → ${formatCompact(nxtTap, "$")}`;
   }
   if (def.kind === "tariff") {
@@ -474,8 +542,8 @@ export function getUpgradeEffectText(state, def) {
 }
 
 export function getBoosterCashCost(state, boosterDef) {
-  const { effectiveIncomePerSec } = getTotals(state);
-  const scale = Math.max(80, effectiveIncomePerSec * 28);
+  const { unboostedIncomePerSec } = getTotals(state);
+  const scale = Math.max(80, unboostedIncomePerSec * 28);
   if (boosterDef.id === "cash_pack") return null;
   if (boosterDef.id === "turbo_3x") return Math.floor(scale * 1.4);
   if (boosterDef.id === "rain_2x") return Math.floor(scale * 1.0);
@@ -496,8 +564,8 @@ export function buyBoosterAction(state, boosterId, payWith = "cash") {
   }
 
   if (def.id === "cash_pack") {
-    const { effectiveIncomePerSec } = getTotals(state);
-    const grant = Math.max(250, Math.floor(effectiveIncomePerSec * 60));
+    const { unboostedIncomePerSec } = getTotals(state);
+    const grant = Math.max(250, Math.floor(unboostedIncomePerSec * 60));
     state.cash += grant;
     state.runCash += grant;
     state.lifetimeCash += grant;
@@ -524,10 +592,15 @@ export function buyShopPerkAction(state, perkId) {
   return true;
 }
 
+export function getPrestigeThreshold(state) {
+  const zoneMult = getActiveZone(state).incomeMult;
+  return 60000 * zoneMult * zoneMult;
+}
+
 export function computePendingEngineers(state) {
-  const threshold = 50000 * getActiveZone(state).incomeMult;
+  const threshold = getPrestigeThreshold(state);
   if (state.runCash < threshold) return 0;
-  return Math.max(1, Math.floor(Math.pow(state.runCash / (threshold * 0.5), 0.45)));
+  return Math.max(1, Math.floor(Math.pow(state.runCash / (threshold * 0.5), 0.36)));
 }
 
 export function buyStationAction(state, stationId, multMode) {
@@ -578,11 +651,15 @@ export function buyUpgradeAction(state, upgradeId) {
 export function triggerPrestige(state) {
   const gained = computePendingEngineers(state);
   if (gained <= 0) return 0;
-  const totalEngineers = state.engineers + gained;
+  const totalEngineers = (Number(state.engineers) || 0) + gained;
   const next = createInitialState(totalEngineers, {
     lifetimeCash: state.lifetimeCash,
     crystals: state.crystals,
+    architects: state.architects || 0,
+    ascension: state.ascension || 0,
     shopPerks: state.shopPerks,
+    boosters: { ...(state.boosters || { turbo_3x: 0, rain_2x: 0, auto_tap: 0 }) },
+    quest: state.quest,
     activeZoneId: state.activeZoneId,
     unlockedZones: state.unlockedZones,
     completedZones: state.completedZones,
@@ -615,8 +692,8 @@ export function getActiveQuest(state) {
   const tpl = QUEST_TEMPLATES[idx];
   const tierScale = 1 + Math.floor(state.quest.index / QUEST_TEMPLATES.length);
   const target = tpl.kind === "events" || tpl.kind === "overdrive" ? tpl.target : tpl.target * tierScale;
-  const { effectiveIncomePerSec } = getTotals(state);
-  const rewardCash = Math.max(80 * getActiveZone(state).incomeMult, Math.floor(effectiveIncomePerSec * tpl.cashSec));
+  const { unboostedIncomePerSec } = getTotals(state);
+  const rewardCash = Math.max(80 * getActiveZone(state).incomeMult, Math.floor(unboostedIncomePerSec * tpl.cashSec));
   const progress = Math.min(target, state.quest.progress || 0);
   return {
     tpl,
@@ -651,13 +728,13 @@ export function claimQuestReward(state) {
 export function collectRiverEventReward(state, eventType) {
   state.profile.eventsCaught = (state.profile.eventsCaught || 0) + 1;
   recordQuestEvent(state, "events", 1);
-  const { effectiveIncomePerSec } = getTotals(state);
+  const { unboostedIncomePerSec } = getTotals(state);
   if (eventType === "drone") {
     const crystals = 2;
     state.crystals = (state.crystals || 0) + crystals;
     return { type: "drone", cash: 0, crystals };
   }
-  const cash = Math.max(120 * getActiveZone(state).incomeMult, Math.floor(effectiveIncomePerSec * 25));
+  const cash = Math.max(120 * getActiveZone(state).incomeMult, Math.floor(unboostedIncomePerSec * 25));
   state.cash += cash;
   state.runCash += cash;
   state.lifetimeCash += cash;
@@ -734,7 +811,7 @@ export function tickEconomy(state, dtSeconds) {
 
 export function formatCompact(value, prefix = "") {
   if (!Number.isFinite(value) || value < 0) return `${prefix}0`;
-  const suffixes = ["", "K", "M", "B", "T", "Qa", "Qi"];
+  const suffixes = ["", "K", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc"];
   if (value < 1000) {
     const rounded = value < 10 && value > 0 && prefix === "$" ? value.toFixed(1) : Math.floor(value);
     return `${prefix}${rounded}`;
@@ -766,17 +843,25 @@ export function loadState() {
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return { state: createInitialState(0), offlineEarned: 0, offlineSeconds: 0 };
     const parsed = JSON.parse(raw);
-    const fresh = createInitialState(parsed.engineers || 0, {
+    const fresh = createInitialState(Math.max(0, Number(parsed.engineers) || 0), {
       lifetimeCash: Number(parsed.lifetimeCash) || 0,
       crystals: parsed.crystals ?? 5,
+      architects: Math.max(0, Number(parsed.architects) || 0),
+      ascension: Math.max(0, Number(parsed.ascension) || 0),
       shopPerks: parsed.shopPerks || { gold_blades: 0, crystal_battery: 0, offline_amp: 0 },
+      boosters: {
+        turbo_3x: Math.max(0, Number(parsed.boosters?.turbo_3x) || 0),
+        rain_2x: Math.max(0, Number(parsed.boosters?.rain_2x) || 0),
+        auto_tap: Math.max(0, Number(parsed.boosters?.auto_tap) || 0)
+      },
       activeZoneId: parsed.activeZoneId || "valley",
       unlockedZones: Array.isArray(parsed.unlockedZones) ? parsed.unlockedZones : ["valley"],
       completedZones: Array.isArray(parsed.completedZones) ? parsed.completedZones : [],
       claimedGoals: Array.isArray(parsed.claimedGoals) ? parsed.claimedGoals : [],
       claimedAchievements: Array.isArray(parsed.claimedAchievements) ? parsed.claimedAchievements : [],
       quest: parsed.quest || { index: 0, progress: 0 },
-      profile: parsed.profile || { name: "Гидро-Мастер", avatar: "av_0", totalTaps: 0, playTimeSec: 0, eventsCaught: 0 }
+      profile: parsed.profile || { name: "Гидро-Мастер", avatar: "av_0", totalTaps: 0, playTimeSec: 0, eventsCaught: 0 },
+      extraStartCash: 0
     });
     fresh.cash = Number(parsed.cash) || 0;
     fresh.runCash = Number(parsed.runCash) || fresh.cash;
@@ -804,9 +889,9 @@ export function loadState() {
     }
 
     const elapsedSec = Math.min(8 * 3600, Math.max(0, (Date.now() - (parsed.lastSavedAt || Date.now())) / 1000));
-    const { baseIncomePerSec } = getTotals(fresh);
-    const offlineMult = 0.35 + (fresh.shopPerks?.offline_amp || 0) * 0.15;
-    const offlineEarned = elapsedSec >= 10 ? baseIncomePerSec * elapsedSec * offlineMult : 0;
+    const { unboostedIncomePerSec } = getTotals(fresh);
+    const offlineMult = 0.35 + (fresh.shopPerks?.offline_amp || 0) * 0.25;
+    const offlineEarned = elapsedSec >= 10 ? unboostedIncomePerSec * elapsedSec * offlineMult : 0;
     if (offlineEarned > 0) {
       fresh.cash += offlineEarned;
       fresh.runCash += offlineEarned;

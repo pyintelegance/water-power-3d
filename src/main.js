@@ -12,6 +12,7 @@ import {
   buyStationAction,
   buyUpgradeAction,
   canAdvanceZone,
+  canTriggerArchitect,
   checkAchievements,
   checkAndClaimGoals,
   claimQuestReward,
@@ -21,6 +22,7 @@ import {
   formatWatts,
   getActiveQuest,
   getActiveZone,
+  getArchitectTargetWatts,
   getBoosterCashCost,
   getBulkStationCost,
   getCityEraIndex,
@@ -28,6 +30,7 @@ import {
   getMaxAffordableStationLevels,
   getOnboardingUnlocks,
   getPlayerRank,
+  getPrestigeThreshold,
   getShopPerkCost,
   getStationOutput,
   getStationUpgradePreview,
@@ -40,6 +43,7 @@ import {
   resetAllProgress,
   saveState,
   tickEconomy,
+  triggerArchitectAscension,
   triggerPrestige
 } from "./economy.js";
 import { iconHtml } from "./icons.js";
@@ -155,6 +159,7 @@ document.getElementById("hud-power-icon").innerHTML = iconHtml("power");
 document.getElementById("hud-crystal-icon").innerHTML = iconHtml("crystal", "svg-ic-sm");
 btnSound.innerHTML = iconHtml("sound_on");
 if (btnFullscreen) btnFullscreen.innerHTML = iconHtml("fullscreen");
+if (btnPanToggle) btnPanToggle.innerHTML = iconHtml("pan", "svg-ic-sm");
 offlineIcon.innerHTML = iconHtml("power", "svg-ic-hero");
 
 function applyStaticTranslations() {
@@ -178,12 +183,12 @@ function applyStaticTranslations() {
     const el = document.querySelector(`.tab-btn[data-tab="${key}"]`);
     if (el) el.textContent = t(tKey);
   }
-  const camLabels = { 0: "camOverview", 1: "camStations", 3: "camCity" };
+  const camLabels = { 0: "camOverview", 1: "camStations", 2: "camDam", 3: "camCity" };
   for (const [camIdx, tKey] of Object.entries(camLabels)) {
     const el = document.querySelector(`.cam-btn[data-cam="${camIdx}"]`);
     if (el) el.textContent = t(tKey);
   }
-  btnPanToggle.textContent = t(world.panEnabled ? "panOn" : "panOff");
+  btnPanToggle.title = t("titlePan");
 
   const profileTitleEl = document.getElementById("profile-modal-title");
   if (profileTitleEl) profileTitleEl.textContent = t("profileTitle");
@@ -426,6 +431,7 @@ function renderCards() {
       const preview = getStationUpgradePreview(state, def, buyCount);
       const milestoneNote =
         st.unlocked && preview.nextMilestone ? t("milestoneNote", { m: preview.nextMilestone }) : "";
+      const readyToBuild = !st.unlocked && state.cash >= cost;
 
       const card = document.createElement("div");
       card.className = `card${st.unlocked ? "" : " locked"}`;
@@ -435,7 +441,9 @@ function renderCards() {
           <div class="card-info">
             <div class="card-title">
               <span>${stName}</span>
-              <span class="lvl-badge">${st.unlocked ? t("lvlBadge", { lvl: st.level }) : t("notBuilt")}</span>
+              <span class="lvl-badge${readyToBuild ? " ready" : ""}" data-badge="${def.id}">${
+                st.unlocked ? t("lvlBadge", { lvl: st.level }) : t(readyToBuild ? "readyToBuild" : "notBuilt")
+              }</span>
             </div>
             <div class="card-meta">
               ${
@@ -444,7 +452,7 @@ function renderCards() {
                   : stDesc
               }
             </div>
-            <div class="card-delta">
+            <div class="card-delta" data-delta="${def.id}">
               ${
                 st.unlocked
                   ? t("stationGain", { cash: formatCompact(preview.deltaIncome, "$"), sec, watts: formatWatts(preview.deltaWatts), ms: milestoneNote })
@@ -462,7 +470,7 @@ function renderCards() {
           </div>
         </div>
         <button class="buy-btn" data-action="station" data-id="${def.id}" data-cost="${cost}">
-          <span>${formatCompact(cost, "$")}</span>
+          <span class="buy-cost">${formatCompact(cost, "$")}</span>
           <span class="buy-action">${actionLabel}</span>
         </button>
       `;
@@ -571,7 +579,7 @@ function renderCards() {
     const pending = computePendingEngineers(state);
     const currentBonus = state.engineers * 50;
     const nextBonus = (state.engineers + pending) * 50;
-    const reqCash = formatCompact(50000 * getActiveZone(state).incomeMult, "$");
+    const reqCash = formatCompact(getPrestigeThreshold(state), "$");
 
     const hero = document.createElement("div");
     hero.className = "prestige-hero";
@@ -580,17 +588,103 @@ function renderCards() {
       <p>${t("prestigeDesc")}</p>
       <div class="prestige-stats">
         <span>${t("prestigeInStaff", { n: state.engineers, pct: currentBonus })}</span>
-        <span>${t("prestigePending", { n: pending, pct: nextBonus })}</span>
+        <span id="prestige-pending-txt">${t("prestigePending", { n: pending, pct: nextBonus })}</span>
       </div>
-      <button class="buy-btn ${pending > 0 ? "can-afford" : "cannot-afford"}" style="width:100%" data-action="prestige" ${pending <= 0 ? "disabled" : ""}>
+      <button id="btn-prestige-hire" class="buy-btn ${pending > 0 ? "can-afford" : "cannot-afford"}" style="width:100%" data-action="prestige" ${pending <= 0 ? "disabled" : ""}>
         <span>${pending > 0 ? t("prestigeBtnHire", { n: pending }) : t("prestigeBtnNeed", { cash: reqCash })}</span>
         <span class="buy-action">${t("prestigeBtnSub")}</span>
       </button>
     `;
     cardsList.appendChild(hero);
+
+    if (state.activeZoneId === "cyber" || (state.architects || 0) > 0) {
+      const archReady = canTriggerArchitect(state);
+      const archMult = Math.pow(2, state.architects || 0);
+      const archTarget = formatWatts(getArchitectTargetWatts(state));
+      const archHero = document.createElement("div");
+      archHero.className = "prestige-hero";
+      archHero.style.marginTop = "6px";
+      archHero.innerHTML = `
+        <h3>${t("architectTitle")}</h3>
+        <p>${t("architectDesc")}</p>
+        <div class="prestige-stats">
+          <span>${t("architectStats", { n: state.architects || 0, mult: archMult, asc: state.ascension || 0 })}</span>
+        </div>
+        <button id="btn-architect-go" class="buy-btn ${archReady ? "crystal-btn can-afford" : "cannot-afford"}" style="width:100%" data-action="architect" ${archReady ? "" : "disabled"}>
+          <span>${archReady ? t("architectBtnGo") : t("architectBtnNeed", { watts: archTarget })}</span>
+          <span class="buy-action">${t("architectBtnSub")}</span>
+        </button>
+      `;
+      cardsList.appendChild(archHero);
+    }
   }
 
   refreshButtonStates();
+}
+
+function refreshMaxStationButtons() {
+  if (activeTab !== "stations") return;
+  const sec = t("secUnit");
+  for (const def of getZoneStations(state.activeZoneId)) {
+    const st = state.stations[def.id];
+    const btn = cardsList.querySelector(`.buy-btn[data-action="station"][data-id="${def.id}"]`);
+    if (!btn || !st) continue;
+    if (!st.unlocked) {
+      const badge = cardsList.querySelector(`[data-badge="${def.id}"]`);
+      const canReady = state.cash >= def.unlockCost;
+      if (badge) {
+        badge.classList.toggle("ready", canReady);
+        badge.textContent = t(canReady ? "readyToBuild" : "notBuilt");
+      }
+      continue;
+    }
+    if (buyMult === "MAX") {
+      const buyCount = Math.max(1, getMaxAffordableStationLevels(def, st.level, state.cash));
+      const cost = getBulkStationCost(def, st.level, buyCount);
+      btn.dataset.cost = String(cost);
+      const costSpan = btn.querySelector(".buy-cost");
+      const actSpan = btn.querySelector(".buy-action");
+      if (costSpan) costSpan.textContent = formatCompact(cost, "$");
+      if (actSpan) actSpan.textContent = t("actionUpN", { n: buyCount });
+      const deltaEl = cardsList.querySelector(`[data-delta="${def.id}"]`);
+      if (deltaEl) {
+        const preview = getStationUpgradePreview(state, def, buyCount);
+        const msNote = preview.nextMilestone ? t("milestoneNote", { m: preview.nextMilestone }) : "";
+        deltaEl.textContent = t("stationGain", { cash: formatCompact(preview.deltaIncome, "$"), sec, watts: formatWatts(preview.deltaWatts), ms: msNote });
+      }
+    }
+  }
+}
+
+function refreshPrestigeLive() {
+  if (activeTab !== "prestige") return;
+  const pending = computePendingEngineers(state);
+  const nextBonus = (state.engineers + pending) * 50;
+  const reqCash = formatCompact(getPrestigeThreshold(state), "$");
+  const pendEl = document.getElementById("prestige-pending-txt");
+  const hireBtn = document.getElementById("btn-prestige-hire");
+  if (pendEl) pendEl.innerHTML = t("prestigePending", { n: pending, pct: nextBonus });
+  if (hireBtn) {
+    hireBtn.disabled = pending <= 0;
+    hireBtn.classList.toggle("can-afford", pending > 0);
+    hireBtn.classList.toggle("cannot-afford", pending <= 0);
+    const firstSpan = hireBtn.querySelector("span");
+    if (firstSpan) {
+      firstSpan.textContent = pending > 0 ? t("prestigeBtnHire", { n: pending }) : t("prestigeBtnNeed", { cash: reqCash });
+    }
+  }
+  const archBtn = document.getElementById("btn-architect-go");
+  if (archBtn) {
+    const ready = canTriggerArchitect(state);
+    archBtn.disabled = !ready;
+    archBtn.classList.toggle("crystal-btn", ready);
+    archBtn.classList.toggle("can-afford", ready);
+    archBtn.classList.toggle("cannot-afford", !ready);
+    const firstSpan = archBtn.querySelector("span");
+    if (firstSpan) {
+      firstSpan.textContent = ready ? t("architectBtnGo") : t("architectBtnNeed", { watts: formatWatts(getArchitectTargetWatts(state)) });
+    }
+  }
 }
 
 function refreshButtonStates() {
@@ -824,13 +918,10 @@ function updateHudAndButtons() {
       : t("overdriveIdle");
 
   renderActiveBoostersHud();
-
-  if (activeTab === "stations" && buyMult === "MAX") {
-    renderCards();
-  } else {
-    refreshButtonStates();
-    refreshMiningBars();
-  }
+  refreshMaxStationButtons();
+  refreshPrestigeLive();
+  refreshButtonStates();
+  refreshMiningBars();
 }
 
 cardsList.addEventListener("click", (e) => {
@@ -883,6 +974,18 @@ cardsList.addEventListener("click", (e) => {
   } else if (action === "prestige") {
     if (triggerPrestige(state) > 0) {
       sound.playUnlock();
+      saveState(state);
+      renderCards();
+      updateHudAndButtons();
+    }
+  } else if (action === "architect") {
+    if (triggerArchitectAscension(state) > 0) {
+      sound.playUnlock();
+      lastEraIndex = 0;
+      lastZoneStripSig = "";
+      world.setZoneTheme(state.activeZoneId);
+      world.setCameraPreset(0);
+      showBannerToast(t("toastArchitect", { mult: Math.pow(2, state.architects || 0) }), t("architectBtnSub"));
       saveState(state);
       renderCards();
       updateHudAndButtons();
@@ -940,7 +1043,7 @@ document.querySelector(".cam-bar").addEventListener("click", (e) => {
     world.setPanEnabled(next);
     btnPanToggle.classList.toggle("active", next);
     btnPanToggle.setAttribute("aria-pressed", String(next));
-    btnPanToggle.textContent = t(next ? "panOn" : "panOff");
+    btnPanToggle.title = t("titlePan");
   }
 });
 
@@ -1042,6 +1145,7 @@ window.addEventListener("keydown", (e) => {
   if (e.target && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")) return;
   if (e.code === "Space") {
     e.preventDefault();
+    if (e.repeat) return;
     const comboMult = registerTapCombo();
     const earned = applyTap(state, comboMult);
     sound.playTap(tapCombo);
@@ -1080,16 +1184,44 @@ if (offlineEarned > 0) {
   offlineModal.classList.remove("hidden");
 }
 
-window.addEventListener("resize", () => world.resize());
-document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "hidden") saveState(state);
-});
-window.addEventListener("pagehide", () => saveState(state));
-
 let lastFrameTime = performance.now();
 let uiAccumulator = 0;
 let saveAccumulator = 0;
 let lastEventType = null;
+let hiddenAt = null;
+let rafId = 0;
+
+window.addEventListener("resize", () => world.resize());
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") {
+    hiddenAt = Date.now();
+    saveState(state);
+    sound.setEnabled(false);
+    if (rafId) {
+      cancelAnimationFrame(rafId);
+      rafId = 0;
+    }
+  } else {
+    if (hiddenAt) {
+      const awaySec = Math.min(8 * 3600, Math.max(0, (Date.now() - hiddenAt) / 1000));
+      hiddenAt = null;
+      if (awaySec >= 3) {
+        const { unboostedIncomePerSec } = getTotals(state);
+        const offlineMult = 0.35 + (state.shopPerks?.offline_amp || 0) * 0.25;
+        const gained = unboostedIncomePerSec * awaySec * offlineMult;
+        if (gained > 0) {
+          state.cash += gained;
+          state.runCash += gained;
+          state.lifetimeCash += gained;
+        }
+      }
+    }
+    sound.setEnabled(!userMuted);
+    lastFrameTime = performance.now();
+    if (!rafId) rafId = requestAnimationFrame(frame);
+  }
+});
+window.addEventListener("pagehide", () => saveState(state));
 
 function frame(now) {
   const dt = (now - lastFrameTime) / 1000;
@@ -1098,7 +1230,7 @@ function frame(now) {
   if ((state.boosters?.auto_tap || 0) > 0) {
     autoTapAcc += dt;
     if (autoTapAcc >= 0.34) {
-      autoTapAcc = 0;
+      autoTapAcc -= 0.34;
       const earned = applyTap(state);
       const rect = canvas.getBoundingClientRect();
       spawnTapText(rect.left + rect.width * 0.42, rect.top + rect.height * 0.48, earned);
@@ -1132,13 +1264,13 @@ function frame(now) {
     saveState(state);
   }
 
-  requestAnimationFrame(frame);
+  rafId = requestAnimationFrame(frame);
 }
 
 applyStaticTranslations();
 renderCards();
 updateHudAndButtons();
-requestAnimationFrame(frame);
+rafId = requestAnimationFrame(frame);
 
 window.__WATER_POWER_DEBUG__ = {
   state,

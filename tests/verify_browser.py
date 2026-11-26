@@ -78,6 +78,9 @@ def main():
             assert tab_txt == "Stations", f"Expected Stations in EN, got {tab_txt}"
             tier50_vis = page.evaluate("window.__WATER_POWER_DEBUG__.world.stationNodes.s0.tiers.tier50.visible")
             assert tier50_vis is True, "Tier 50 3D upgrade mesh did not activate at level 55"
+            upper_water_vc = page.evaluate("window.__WATER_POWER_DEBUG__.world.upperWaterMat.vertexColors")
+            assert upper_water_vc is False, "upperWaterMat must not enable vertexColors"
+            assert page.locator(".cam-btn[data-cam='2']").is_visible(), "Dam camera preset button missing"
             page.screenshot(path=os.path.join(SHOTS_DIR, "desktop_en_tier50.png"))
 
             # 4. Mobile portrait viewport (390x844) framing & HUD check

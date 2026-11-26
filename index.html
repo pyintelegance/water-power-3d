@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta
     name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
   />
   <meta name="theme-color" content="#0b1d2e" />
   <meta name="description" content="Water Power 3D — build hydro dams, trigger turbo water surges, and power an evolving low-poly city across Green Valley, Snowy Peaks, and Neon Canyon." />
@@ -86,8 +86,9 @@
       <div class="cam-bar" role="group" aria-label="Управление камерой">
         <button class="cam-btn active" data-cam="0">Обзор</button>
         <button class="cam-btn" data-cam="1">Станции</button>
+        <button class="cam-btn" data-cam="2">Плотина</button>
         <button class="cam-btn" data-cam="3">Город</button>
-        <button class="pan-toggle-btn" id="btn-pan-toggle" aria-pressed="false">Сдвиг: ВЫКЛ</button>
+        <button class="pan-toggle-btn" id="btn-pan-toggle" aria-pressed="false" title="Сдвиг"></button>
       </div>
 
       <div class="active-boosters hidden" id="active-boosters"></div>
@@ -197,6 +198,6 @@
     </div>
   </div>
 
-  <script type="module" src="/src/main.js"></script>
+  <script type="module" src="./src/main.js"></script>
 </body>
 </html>
