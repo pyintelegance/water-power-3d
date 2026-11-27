@@ -11,19 +11,23 @@ import {
   canTriggerArchitect,
   checkAchievements,
   checkAndClaimGoals,
+  claimDailyReward,
   claimQuestReward,
   collectRiverEventReward,
   computePendingEngineers,
+  consumeSurgeEvent,
   createInitialState,
   getActiveQuest,
   getBoosterCashCost,
   getCurrentGoalProgress,
+  getDailyStatus,
   getMaxAffordableStationLevels,
   getOnboardingUnlocks,
   getTotals,
   getZoneStations,
   getZoneUpgrades,
   resetAllProgress,
+  startCitySurge,
   tickEconomy,
   triggerArchitectAscension,
   triggerPrestige
@@ -166,4 +170,20 @@ test("anti-exploit: booster cash cost invariant & Architect ascension resets wor
   assert.equal(s.architects, 1);
   assert.equal(s.ascension, 1);
   assert.equal(s.activeZoneId, "valley");
+});
+
+test("daily rewards & City Power Surge award crystals and cash cleanly", () => {
+  const s = createInitialState(0);
+  const d0 = getDailyStatus(s, "2026-11-27");
+  assert.equal(d0.canClaim, true);
+  const claimed = claimDailyReward(s, "2026-11-27");
+  assert.equal(claimed.day, 1);
+  assert.equal(getDailyStatus(s, "2026-11-27").canClaim, false);
+
+  startCitySurge(s);
+  assert.equal(s.surge.active, true);
+  for (let i = 0; i < 18; i += 1) applyTap(s);
+  assert.equal(s.surge.active, false);
+  const win = consumeSurgeEvent(s);
+  assert.ok(win && win.crystals === 3 && win.cash >= 180);
 });

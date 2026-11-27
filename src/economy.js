@@ -152,6 +152,16 @@ export const QUEST_TEMPLATES = [
   { id: "q_overdrive", title: "Разогнать Турбо до x2.0", kind: "overdrive", target: 1, crystals: 2, cashSec: 25 }
 ];
 
+export const DAILY_REWARDS = [
+  { day: 1, crystals: 3, cashSec: 30 },
+  { day: 2, crystals: 4, cashSec: 45 },
+  { day: 3, crystals: 6, cashSec: 60 },
+  { day: 4, crystals: 8, cashSec: 90 },
+  { day: 5, crystals: 10, cashSec: 120 },
+  { day: 6, crystals: 12, cashSec: 150 },
+  { day: 7, crystals: 20, cashSec: 240 }
+];
+
 export function getActiveZone(state) {
   return ZONES.find((z) => z.id === state.activeZoneId) || ZONES[0];
 }
@@ -210,6 +220,8 @@ export function createInitialState(engineers = 0, preserved = null) {
     claimedGoals: preserved?.claimedGoals || [],
     claimedAchievements: preserved?.claimedAchievements || [],
     quest: preserved?.quest || { index: 0, progress: 0 },
+    daily: preserved?.daily || { streak: 0, lastClaimDate: "" },
+    surge: { active: false, timeLeft: 0, taps: 0, targetTaps: 18, cooldown: 50 },
     profile: preserved?.profile || { name: "Гидро-Мастер", avatar: "av_0", totalTaps: 0, playTimeSec: 0, eventsCaught: 0 },
     overdrive: 0,
     lastSavedAt: Date.now()
@@ -683,7 +695,69 @@ export function applyTap(state, comboMult = 1) {
   if (getOverdriveMultiplier(state) >= 2.0) {
     recordQuestEvent(state, "overdrive", 1);
   }
+  if (state.surge?.active) {
+    state.surge.taps += 1;
+    if (state.surge.taps >= state.surge.targetTaps) {
+      const { unboostedIncomePerSec } = getTotals(state);
+      const rewardCash = Math.max(180 * getActiveZone(state).incomeMult, Math.floor(unboostedIncomePerSec * 45));
+      const rewardCrystals = 3;
+      state.cash += rewardCash;
+      state.runCash += rewardCash;
+      state.lifetimeCash += rewardCash;
+      state.crystals = (state.crystals || 0) + rewardCrystals;
+      state.surge.active = false;
+      state.surge.timeLeft = 0;
+      state.surge.cooldown = 75;
+      state._surgeWon = { cash: rewardCash, crystals: rewardCrystals };
+    }
+  }
   return gained;
+}
+
+export function getTodayKey() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+export function getDailyStatus(state, todayKey = getTodayKey()) {
+  if (!state.daily) state.daily = { streak: 0, lastClaimDate: "" };
+  const canClaim = state.daily.lastClaimDate !== todayKey;
+  const nextIndex = (state.daily.streak || 0) % DAILY_REWARDS.length;
+  return {
+    canClaim,
+    nextDayIndex: nextIndex,
+    streak: state.daily.streak || 0,
+    rewards: DAILY_REWARDS
+  };
+}
+
+export function claimDailyReward(state, todayKey = getTodayKey()) {
+  const status = getDailyStatus(state, todayKey);
+  if (!status.canClaim) return null;
+  const reward = DAILY_REWARDS[status.nextDayIndex];
+  const { unboostedIncomePerSec } = getTotals(state);
+  const cash = Math.max(150 * getActiveZone(state).incomeMult, Math.floor(unboostedIncomePerSec * reward.cashSec));
+  state.cash += cash;
+  state.runCash += cash;
+  state.lifetimeCash += cash;
+  state.crystals = (state.crystals || 0) + reward.crystals;
+  state.daily.streak = (state.daily.streak || 0) + 1;
+  state.daily.lastClaimDate = todayKey;
+  return { day: reward.day, crystals: reward.crystals, cash };
+}
+
+export function startCitySurge(state) {
+  if (!state.surge) state.surge = { active: false, timeLeft: 0, taps: 0, targetTaps: 18, cooldown: 50 };
+  state.surge.active = true;
+  state.surge.timeLeft = 15;
+  state.surge.taps = 0;
+  state.surge.targetTaps = 18;
+  return state.surge;
+}
+
+export function consumeSurgeEvent(state) {
+  const res = state._surgeWon || null;
+  state._surgeWon = null;
+  return res;
 }
 
 export function getActiveQuest(state) {
@@ -806,6 +880,20 @@ export function tickEconomy(state, dtSeconds) {
     state.overdrive = Math.max(0, state.overdrive - clampedDt * 0.18);
   }
 
+  if (!state.surge) state.surge = { active: false, timeLeft: 0, taps: 0, targetTaps: 18, cooldown: 50 };
+  if (state.surge.active) {
+    state.surge.timeLeft = Math.max(0, state.surge.timeLeft - clampedDt);
+    if (state.surge.timeLeft <= 0) {
+      state.surge.active = false;
+      state.surge.cooldown = 60;
+    }
+  } else if (getTotals(state).totalWatts >= 120) {
+    state.surge.cooldown = Math.max(0, (state.surge.cooldown ?? 50) - clampedDt);
+    if (state.surge.cooldown <= 0) {
+      startCitySurge(state);
+    }
+  }
+
   return payouts;
 }
 
@@ -860,6 +948,7 @@ export function loadState() {
       claimedGoals: Array.isArray(parsed.claimedGoals) ? parsed.claimedGoals : [],
       claimedAchievements: Array.isArray(parsed.claimedAchievements) ? parsed.claimedAchievements : [],
       quest: parsed.quest || { index: 0, progress: 0 },
+      daily: parsed.daily || { streak: 0, lastClaimDate: "" },
       profile: parsed.profile || { name: "Гидро-Мастер", avatar: "av_0", totalTaps: 0, playTimeSec: 0, eventsCaught: 0 },
       extraStartCash: 0
     });

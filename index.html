@@ -44,6 +44,10 @@
         <span id="hud-crystal-val">5</span>
       </div>
 
+      <button class="icon-btn daily-btn" id="btn-daily" title="Ежедневный бонус" aria-label="Ежедневный бонус">
+        <span id="daily-btn-icon"></span>
+        <span class="daily-dot hidden" id="daily-dot"></span>
+      </button>
       <button class="lang-btn" id="btn-lang" title="RU / EN" aria-label="Language">RU</button>
       <button class="icon-btn" id="btn-profile" title="Профиль" aria-label="Профиль"></button>
       <button class="icon-btn" id="btn-sound" title="Звук" aria-label="Звук"></button>
@@ -77,6 +81,7 @@
       </div>
 
       <div class="combo-pill hidden" id="combo-pill">КОМБО x1.5</div>
+      <div class="surge-pill hidden" id="surge-pill">ПИК В ГОРОДЕ!</div>
       <button class="event-alert-btn hidden" id="btn-event-alert">Груз на реке — забрать!</button>
       <div class="quest-pill hidden" id="quest-pill">
         <span id="quest-text">Задание: 0/15</span>
@@ -183,6 +188,19 @@
           <button class="secondary-btn" id="btn-cancel-zone">Остаться</button>
           <button class="primary-btn" id="btn-confirm-zone">Перейти</button>
         </div>
+      </div>
+    </div>
+
+    <!-- Daily Rewards Modal -->
+    <div class="modal-backdrop hidden" id="daily-modal">
+      <div class="modal-card">
+        <div class="modal-head-row">
+          <h2 id="daily-modal-title">Ежедневные награды</h2>
+          <button class="mini-close-btn" id="btn-close-daily">✕</button>
+        </div>
+        <p class="modal-desc" id="daily-modal-sub">Заходи каждый день за кристаллами и фондом развития</p>
+        <div class="daily-grid" id="daily-grid"></div>
+        <button class="primary-btn" id="btn-claim-daily">Забрать награду</button>
       </div>
     </div>
 

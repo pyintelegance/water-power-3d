@@ -75,6 +75,7 @@ export class WaterPowerWorld {
     this.energyPulses = [];
     this.pulsePaths = [];
     this.splashPool = [];
+    this.fireworkPool = [];
     this.rainPool = [];
     this.snowPool = [];
     this.trees = [];
@@ -97,6 +98,7 @@ export class WaterPowerWorld {
     this.buildPowerLines();
     this.buildCityEras();
     this.buildSplashParticles();
+    this.buildFireworkParticles();
     this.buildRainParticles();
     this.buildSnowParticles();
     this.buildRiverEventModels();
@@ -827,6 +829,54 @@ export class WaterPowerWorld {
     this.dummy = new THREE.Object3D();
   }
 
+  buildFireworkParticles() {
+    const count = 36;
+    const geo = new THREE.OctahedronGeometry(0.18, 0);
+    const mat = new THREE.MeshBasicMaterial({ color: "#fde047" });
+    this.fireworkInstanced = new THREE.InstancedMesh(geo, mat, count);
+    this.fireworkInstanced.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    this.fireworkInstanced.frustumCulled = false;
+    this.fireworkInstanced.count = 0;
+    this.scene.add(this.fireworkInstanced);
+
+    const palette = [
+      new THREE.Color("#fde047"),
+      new THREE.Color("#38bdf8"),
+      new THREE.Color("#f472b6"),
+      new THREE.Color("#4ade80")
+    ];
+    for (let i = 0; i < count; i += 1) {
+      this.fireworkInstanced.setColorAt(i, palette[i % palette.length]);
+      this.fireworkPool.push({
+        active: false,
+        pos: new THREE.Vector3(),
+        vel: new THREE.Vector3(),
+        life: 0,
+        maxLife: 1.0
+      });
+    }
+    if (this.fireworkInstanced.instanceColor) {
+      this.fireworkInstanced.instanceColor.needsUpdate = true;
+    }
+  }
+
+  spawnCityFireworks(amount = 28) {
+    let spawned = 0;
+    for (const p of this.fireworkPool) {
+      if (!p.active) {
+        p.active = true;
+        p.pos.set(8.8 + (Math.random() - 0.5) * 4.5, 4.2 + Math.random() * 1.5, (Math.random() - 0.5) * 6);
+        const angle = Math.random() * Math.PI * 2;
+        const spd = 2.2 + Math.random() * 3.4;
+        p.vel.set(Math.cos(angle) * spd, 3.2 + Math.random() * 3.8, Math.sin(angle) * spd);
+        p.life = 0;
+        p.maxLife = 0.8 + Math.random() * 0.5;
+        spawned += 1;
+        if (spawned >= amount) break;
+      }
+    }
+  }
+
   spawnSplash(x, y, z, amount = 4) {
     let spawned = 0;
     for (const p of this.splashPool) {
@@ -1444,6 +1494,30 @@ export class WaterPowerWorld {
     this.splashInstanced.count = activeSplashes;
     if (activeSplashes > 0) {
       this.splashInstanced.instanceMatrix.needsUpdate = true;
+    }
+
+    // Update firework particles
+    let activeFw = 0;
+    for (let i = 0; i < this.fireworkPool.length; i += 1) {
+      const p = this.fireworkPool[i];
+      if (!p.active) continue;
+      p.life += dt;
+      if (p.life >= p.maxLife) {
+        p.active = false;
+      } else {
+        p.vel.y -= 6.5 * dt;
+        p.pos.addScaledVector(p.vel, dt);
+        const fade = 1 - p.life / p.maxLife;
+        this.dummy.position.copy(p.pos);
+        this.dummy.scale.setScalar(fade * 1.15);
+        this.dummy.updateMatrix();
+        this.fireworkInstanced.setMatrixAt(activeFw, this.dummy.matrix);
+        activeFw += 1;
+      }
+    }
+    this.fireworkInstanced.count = activeFw;
+    if (activeFw > 0) {
+      this.fireworkInstanced.instanceMatrix.needsUpdate = true;
     }
 
     // Rainstorm booster FX

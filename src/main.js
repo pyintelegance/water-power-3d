@@ -15,9 +15,11 @@ import {
   canTriggerArchitect,
   checkAchievements,
   checkAndClaimGoals,
+  claimDailyReward,
   claimQuestReward,
   collectRiverEventReward,
   computePendingEngineers,
+  consumeSurgeEvent,
   formatCompact,
   formatWatts,
   getActiveQuest,
@@ -27,6 +29,7 @@ import {
   getBulkStationCost,
   getCityEraIndex,
   getCurrentGoalProgress,
+  getDailyStatus,
   getMaxAffordableStationLevels,
   getOnboardingUnlocks,
   getPlayerRank,
@@ -42,6 +45,7 @@ import {
   loadState,
   resetAllProgress,
   saveState,
+  startCitySurge,
   tickEconomy,
   triggerArchitectAscension,
   triggerPrestige
@@ -89,6 +93,7 @@ let lastZoneStripSig = "";
 let tapCombo = 0;
 let lastTapAt = 0;
 let activeFlyOrbs = 0;
+let lastSurgeActive = false;
 
 // DOM refs
 const canvas = document.getElementById("game-canvas");
@@ -109,6 +114,7 @@ const btnGoalCollapse = document.getElementById("btn-goal-collapse");
 const overdriveFill = document.getElementById("overdrive-fill");
 const overdriveLabel = document.getElementById("overdrive-label");
 const comboPill = document.getElementById("combo-pill");
+const surgePill = document.getElementById("surge-pill");
 const btnEventAlert = document.getElementById("btn-event-alert");
 const questPill = document.getElementById("quest-pill");
 const questText = document.getElementById("quest-text");
@@ -128,6 +134,13 @@ const btnBuyMult = document.getElementById("btn-buy-mult");
 const btnCollapse = document.getElementById("btn-collapse");
 const btnProfile = document.getElementById("btn-profile");
 const btnSound = document.getElementById("btn-sound");
+const btnDaily = document.getElementById("btn-daily");
+const dailyBtnIcon = document.getElementById("daily-btn-icon");
+const dailyDot = document.getElementById("daily-dot");
+const dailyModal = document.getElementById("daily-modal");
+const btnCloseDaily = document.getElementById("btn-close-daily");
+const dailyGrid = document.getElementById("daily-grid");
+const btnClaimDaily = document.getElementById("btn-claim-daily");
 const btnLang = document.getElementById("btn-lang");
 const btnFullscreen = document.getElementById("btn-fullscreen");
 const pcHintsEl = document.getElementById("pc-hints");
@@ -158,6 +171,7 @@ document.getElementById("hud-cash-icon").innerHTML = iconHtml("cash");
 document.getElementById("hud-power-icon").innerHTML = iconHtml("power");
 document.getElementById("hud-crystal-icon").innerHTML = iconHtml("crystal", "svg-ic-sm");
 btnSound.innerHTML = iconHtml("sound_on");
+if (dailyBtnIcon) dailyBtnIcon.innerHTML = iconHtml("gift");
 if (btnFullscreen) btnFullscreen.innerHTML = iconHtml("fullscreen");
 if (btnPanToggle) btnPanToggle.innerHTML = iconHtml("pan", "svg-ic-sm");
 offlineIcon.innerHTML = iconHtml("power", "svg-ic-hero");
@@ -170,6 +184,11 @@ function applyStaticTranslations() {
     btnLang.title = t("titleLang");
   }
   if (btnFullscreen) btnFullscreen.title = t("titleFullscreen");
+  if (btnDaily) btnDaily.title = t("titleDaily");
+  const dTitle = document.getElementById("daily-modal-title");
+  const dSub = document.getElementById("daily-modal-sub");
+  if (dTitle) dTitle.textContent = t("dailyTitle");
+  if (dSub) dSub.textContent = t("dailySub");
   btnProfile.title = t("titleProfile");
   btnSound.title = t("titleSound");
   crystalPillEl.title = t("titleCrystals");
@@ -334,6 +353,8 @@ const world = new WaterPowerWorld(
     const comboMult = registerTapCombo();
     const earned = applyTap(state, comboMult);
     sound.playTap(tapCombo);
+    platform.vibrate(8);
+    if (state.profile.totalTaps === 1) platform.trackEvent("first_tap");
     spawnTapText(x, y, earned, comboMult);
     spawnFlyingOrbs(x, y, cashPillEl, "gold", 2);
     updateHudAndButtons();
@@ -814,10 +835,46 @@ function updateHudAndButtons() {
   hudEra.textContent = tEraName(curZone, eraIdx);
   if (eraIdx > lastEraIndex) {
     lastEraIndex = eraIdx;
-    sound.playUnlock();
+    sound.playFirework();
+    world.spawnCityFireworks(26);
+    platform.happyTime();
+    platform.trackEvent("city_era_up", { zone: curZone.id, era: eraIdx });
     showBannerToast(t("toastNewEra"), tEraName(curZone, eraIdx));
   } else if (eraIdx < lastEraIndex) {
     lastEraIndex = eraIdx;
+  }
+
+  const surgeWin = consumeSurgeEvent(state);
+  if (surgeWin) {
+    sound.playFirework();
+    world.spawnCityFireworks(30);
+    world.triggerShake(0.22);
+    platform.vibrate(35);
+    platform.happyTime();
+    platform.trackEvent("surge_cleared");
+    spawnFlyingOrbs(window.innerWidth * 0.45, 220, crystalPillEl, "crystal", 5);
+    showBannerToast(t("surgeWinTitle"), t("surgeWinSub", { cash: formatCompact(surgeWin.cash, "$"), crystals: surgeWin.crystals }));
+  }
+
+  if (state.surge?.active) {
+    if (!lastSurgeActive) {
+      lastSurgeActive = true;
+      sound.playSurgeAlert();
+      platform.vibrate(20);
+    }
+    surgePill.classList.remove("hidden");
+    surgePill.textContent = t("surgeBanner", {
+      taps: state.surge.taps,
+      target: state.surge.targetTaps,
+      sec: Math.ceil(state.surge.timeLeft)
+    });
+  } else {
+    lastSurgeActive = false;
+    surgePill.classList.add("hidden");
+  }
+
+  if (dailyDot) {
+    dailyDot.classList.toggle("hidden", !getDailyStatus(state).canClaim);
   }
 
   const claimed = checkAndClaimGoals(state);
@@ -935,10 +992,13 @@ cardsList.addEventListener("click", (e) => {
     const wasUnlocked = state.stations[id]?.unlocked;
     if (buyStationAction(state, id, buyMult)) {
       if (!wasUnlocked) {
-        sound.playUnlock();
+        sound.playBuild();
         world.triggerShake(0.24);
+        platform.vibrate(18);
+        platform.trackEvent("station_unlocked", { id, zone: state.activeZoneId });
       } else {
         sound.playBuy();
+        platform.vibrate(8);
       }
       world.triggerStationPulse(id);
       saveState(state);
@@ -1081,6 +1141,52 @@ btnCloseProfile.addEventListener("click", () => {
   profileModal.classList.add("hidden");
   saveState(state);
 });
+
+function renderDailyModal() {
+  if (!dailyGrid || !btnClaimDaily) return;
+  const st = getDailyStatus(state);
+  dailyGrid.innerHTML = "";
+  for (let i = 0; i < st.rewards.length; i += 1) {
+    const r = st.rewards[i];
+    const completed = i < (st.streak % 7) || (!st.canClaim && i === st.nextDayIndex - 1);
+    const isCurrent = st.canClaim && i === st.nextDayIndex;
+    const card = document.createElement("div");
+    card.className = `daily-card${completed ? " claimed" : ""}${isCurrent ? " active" : ""}`;
+    card.innerHTML = `
+      <strong>${t("dailyDay", { d: r.day })}</strong>
+      <span style="color:#e9d5ff;font-weight:800">+${r.crystals} ${t("crystalsShort")}</span>
+      <span style="color:#4ade80;font-size:10px">+${r.cashSec}${t("secUnit")}</span>
+    `;
+    dailyGrid.appendChild(card);
+  }
+  btnClaimDaily.disabled = !st.canClaim;
+  btnClaimDaily.textContent = st.canClaim ? t("dailyClaim") : t("dailyDone");
+}
+
+if (btnDaily) {
+  btnDaily.addEventListener("click", () => {
+    renderDailyModal();
+    dailyModal.classList.remove("hidden");
+  });
+}
+if (btnCloseDaily) {
+  btnCloseDaily.addEventListener("click", () => dailyModal.classList.add("hidden"));
+}
+if (btnClaimDaily) {
+  btnClaimDaily.addEventListener("click", () => {
+    const res = claimDailyReward(state);
+    if (res) {
+      sound.playFirework();
+      world.spawnCityFireworks(22);
+      platform.vibrate(25);
+      platform.trackEvent("daily_claimed", { day: res.day });
+      dailyModal.classList.add("hidden");
+      showBannerToast(t("toastDaily", { d: res.day }), `+${formatCompact(res.cash, "$")} · +${res.crystals} ${t("crystalsShort")}`);
+      saveState(state);
+      updateHudAndButtons();
+    }
+  });
+}
 
 btnResetPrompt.addEventListener("click", () => {
   resetConfirmBox.classList.toggle("hidden");
@@ -1275,6 +1381,11 @@ rafId = requestAnimationFrame(frame);
 window.__WATER_POWER_DEBUG__ = {
   state,
   world,
+  platform,
+  startSurge: () => {
+    startCitySurge(state);
+    updateHudAndButtons();
+  },
   setLang: (lang) => {
     setLang(lang);
     applyStaticTranslations();

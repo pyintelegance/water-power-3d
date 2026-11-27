@@ -154,4 +154,63 @@ export class SoundEngine {
       osc.stop(t0 + 0.26);
     });
   }
+
+  playBuild() {
+    const ctx = this.ensureContext();
+    if (!ctx || !this.masterGain) return;
+    const now = ctx.currentTime;
+    const thud = ctx.createOscillator();
+    const tGain = ctx.createGain();
+    thud.type = "triangle";
+    thud.frequency.setValueAtTime(140, now);
+    thud.frequency.exponentialRampToValueAtTime(52, now + 0.14);
+    tGain.gain.setValueAtTime(0.001, now);
+    tGain.gain.linearRampToValueAtTime(0.16, now + 0.01);
+    tGain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+    thud.connect(tGain);
+    tGain.connect(this.masterGain);
+    thud.start(now);
+    thud.stop(now + 0.17);
+    this.playUnlock();
+  }
+
+  playSurgeAlert() {
+    const ctx = this.ensureContext();
+    if (!ctx || !this.masterGain) return;
+    const now = ctx.currentTime;
+    [587.33, 880, 587.33, 880].forEach((freq, idx) => {
+      const t0 = now + idx * 0.09;
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(freq, t0);
+      g.gain.setValueAtTime(0.001, t0);
+      g.gain.linearRampToValueAtTime(0.08, t0 + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.08);
+      osc.connect(g);
+      g.connect(this.masterGain);
+      osc.start(t0);
+      osc.stop(t0 + 0.085);
+    });
+  }
+
+  playFirework() {
+    const ctx = this.ensureContext();
+    if (!ctx || !this.masterGain) return;
+    const now = ctx.currentTime;
+    [659.25, 783.99, 987.77, 1318.51, 1567.98].forEach((freq, idx) => {
+      const t0 = now + idx * 0.055;
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(freq, t0);
+      g.gain.setValueAtTime(0.001, t0);
+      g.gain.linearRampToValueAtTime(0.09, t0 + 0.008);
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.22);
+      osc.connect(g);
+      g.connect(this.masterGain);
+      osc.start(t0);
+      osc.stop(t0 + 0.23);
+    });
+  }
 }

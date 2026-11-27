@@ -81,6 +81,14 @@ def main():
             upper_water_vc = page.evaluate("window.__WATER_POWER_DEBUG__.world.upperWaterMat.vertexColors")
             assert upper_water_vc is False, "upperWaterMat must not enable vertexColors"
             assert page.locator(".cam-btn[data-cam='2']").is_visible(), "Dam camera preset button missing"
+            page.evaluate("window.__WATER_POWER_DEBUG__.startSurge()")
+            page.wait_for_timeout(150)
+            assert page.locator("#surge-pill").is_visible(), "City Power Surge banner did not appear"
+            page.locator("#btn-daily").click()
+            page.wait_for_timeout(150)
+            assert page.locator("#daily-modal").is_visible(), "Daily rewards modal did not open"
+            page.locator("#btn-claim-daily").click()
+            page.wait_for_timeout(150)
             page.screenshot(path=os.path.join(SHOTS_DIR, "desktop_en_tier50.png"))
 
             # 4. Mobile portrait viewport (390x844) framing & HUD check
